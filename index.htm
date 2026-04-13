@@ -1196,6 +1196,8 @@ async function loadPedidos() {
       pagina++;
     }
 
+    // Limpa cache antes de salvar novos dados
+    localStorage.removeItem('margemml_pedidos');
     pedidosData = todos.map(p => mapBlingPedido(p));
     localStorage.setItem('margemml_pedidos', JSON.stringify(pedidosData));
 
