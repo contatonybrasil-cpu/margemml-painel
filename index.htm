@@ -899,20 +899,22 @@
           Configure a taxa de comissão do ML para cada categoria. Esses valores são usados no cálculo da margem por pedido.
           <br>Fonte: tabela oficial ML Brasil (2024). Ajuste conforme seu contrato ou categoria específica.
         </p>
-        <table class="taxas-table" id="taxasTable">
+        <p style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.6;">
+          Configure a taxa de comissão de cada canal. Lojas físicas ficam em 0%. Estas taxas são usadas no cálculo da margem por pedido.
+        </p>
+        <table class="taxas-table">
           <thead>
             <tr>
-              <th>Categoria</th>
-              <th>Clássico (%)</th>
-              <th>Premium (%)</th>
-              <th>+ Frete ML (%)</th>
+              <th>Canal</th>
+              <th>Taxa (%)</th>
+              <th>Tipo</th>
             </tr>
           </thead>
-          <tbody id="taxasBody"></tbody>
+          <tbody id="taxasCanalBody"></tbody>
         </table>
         <div style="margin-top:16px;display:flex;gap:10px;">
-          <button class="btn btn-primary" onclick="salvarTaxas()">💾 Salvar taxas</button>
-          <button class="btn btn-secondary" onclick="resetTaxas()">↩ Restaurar padrões</button>
+          <button class="btn btn-primary" onclick="salvarTaxasCanal()">💾 Salvar taxas</button>
+          <button class="btn btn-secondary" onclick="resetTaxasCanal()">↩ Restaurar padrões</button>
         </div>
       </div>
     </div>
@@ -983,6 +985,8 @@ function init() {
 
   applyConfigToForm();
   renderTaxas();
+  carregarTaxasCanal();
+  renderTaxasCanal();
   renderPedidos();
   updateStatus(!!config.blingKey);
 
@@ -1088,6 +1092,56 @@ function updateStatus(connected) {
     badge.style.color = 'var(--muted)';
     text.textContent = 'Desconectado';
   }
+}
+
+// ========== TAXAS POR CANAL ==========
+const CANAIS_CONFIG = [
+  { id: '203628722', nome: '🛒 Mercado Livre', tipo: 'Marketplace' },
+  { id: '203953121', nome: '🛍️ Magalu',        tipo: 'Marketplace' },
+  { id: '205397393', nome: '👟 Netshoes',       tipo: 'Marketplace' },
+  { id: '205401394', nome: '📦 Amazon',         tipo: 'Marketplace' },
+  { id: '206006851', nome: '🎵 TikTok Shop',    tipo: 'Marketplace' },
+  { id: '206029808', nome: '🛒 Shopee',         tipo: 'Marketplace' },
+  { id: '205389906', nome: '🌐 Site',           tipo: 'Gateway' },
+  { id: '203654110', nome: '🏪 Parque do Povo', tipo: 'Loja Física' },
+  { id: '203777302', nome: '🏬 Prudenshopping', tipo: 'Loja Física' },
+];
+
+function renderTaxasCanal() {
+  const saved = JSON.parse(localStorage.getItem('margemml_taxas_canal') || '{}');
+  const body = document.getElementById('taxasCanalBody');
+  if (!body) return;
+  body.innerHTML = CANAIS_CONFIG.map(c => {
+    const taxa = saved[c.id] !== undefined ? saved[c.id] : TAXAS_CANAL[c.id];
+    const disabled = c.tipo === 'Loja Física' ? 'readonly style="opacity:0.4;"' : '';
+    return `<tr>
+      <td style="color:var(--text);">${c.nome}</td>
+      <td><input type="number" min="0" max="30" step="0.1" value="${taxa}" ${disabled} id="taxa_${c.id}" /></td>
+      <td><span class="badge ${c.tipo === 'Loja Física' ? 'badge-blue' : c.tipo === 'Gateway' ? 'badge-warn' : 'badge-green'}">${c.tipo}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function salvarTaxasCanal() {
+  const saved = {};
+  CANAIS_CONFIG.forEach(c => {
+    const el = document.getElementById('taxa_' + c.id);
+    if (el) saved[c.id] = +el.value;
+  });
+  localStorage.setItem('margemml_taxas_canal', JSON.stringify(saved));
+  // Atualiza TAXAS_CANAL em memória
+  Object.assign(TAXAS_CANAL, saved);
+  alert('✅ Taxas salvas! As margens serão recalculadas na próxima sincronização.');
+}
+
+function resetTaxasCanal() {
+  localStorage.removeItem('margemml_taxas_canal');
+  renderTaxasCanal();
+}
+
+function carregarTaxasCanal() {
+  const saved = JSON.parse(localStorage.getItem('margemml_taxas_canal') || '{}');
+  Object.assign(TAXAS_CANAL, saved);
 }
 
 // ========== TAXAS ==========
@@ -1217,13 +1271,37 @@ async function loadPedidos() {
   }
 }
 
+// Taxas por canal (configuráveis)
+const TAXAS_CANAL = {
+  '203628722': 12,   // Mercado Livre
+  '203953121': 14,   // Magalu
+  '205397393': 16,   // Netshoes
+  '205401394': 12,   // Amazon
+  '206006851': 6,    // TikTok Shop
+  '206029808': 14,   // Shopee
+  '205389906': 3,    // Site (gateway)
+  '203654110': 0,    // Parque do Povo
+  '203777302': 0,    // Prudenshopping
+};
+
+function getTaxaCanal(lojaId) {
+  if (TAXAS_CANAL[lojaId] !== undefined) return TAXAS_CANAL[lojaId];
+  return config.taxaMLPadrao;
+}
+
 function mapBlingPedido(p) {
   const items = p.itens || [];
-  const nomeItem = items.length > 0 ? (items[0].descricao || 'Produto') : 'Produto';
+  const nomeItem = p.nomeProduto || (items.length > 0 ? (items[0].descricao || 'Produto') : 'Produto');
   const venda = +(p.totalProdutos || p.total || 0);
-  const cmvItem = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
 
-  const taxaML = venda * config.taxaMLPadrao / 100;
+  // Usa CMV real se disponível, senão calcula pelo % padrão
+  const cmvReal = p.cmvReal || null;
+  const cmvItens = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
+  const cmv = cmvReal || (cmvItens > 0 ? cmvItens : null);
+
+  // Taxa específica do canal
+  const taxaPct = getTaxaCanal(p.lojaId || '');
+  const taxaML = venda * taxaPct / 100;
   const frete = +(p.transporte?.frete || 0);
 
   return {
@@ -1231,8 +1309,9 @@ function mapBlingPedido(p) {
     data: (p.data || '').substring(0,10),
     produto: nomeItem.substring(0,40),
     venda,
-    cmv: cmvItem > 0 ? cmvItem : null,
+    cmv,
     taxaML,
+    taxaPct,
     frete,
     canal: p.canal || 'Outros',
     lojaId: p.lojaId || '',
