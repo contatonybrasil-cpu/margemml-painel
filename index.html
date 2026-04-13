@@ -1196,8 +1196,10 @@ async function testarConexao() {
 // ========== CALCULAR MARGEM ==========
 function calcularMargem(pedido) {
   const venda = pedido.venda || 0;
-  const cmv = pedido.cmv || (venda * config.cmvPadrao / 100);
-  const taxaML = pedido.taxaML || (venda * config.taxaMLPadrao / 100);
+  // Usa CMV real se disponível (não usa || porque 0 seria falso)
+  const cmv = (pedido.cmv !== null && pedido.cmv !== undefined) ? pedido.cmv : (venda * config.cmvPadrao / 100);
+  // Usa taxa do canal (taxaML pode ser 0 para lojas físicas — não usar ||)
+  const taxaML = (pedido.taxaML !== null && pedido.taxaML !== undefined) ? pedido.taxaML : (venda * config.taxaMLPadrao / 100);
   const frete = pedido.frete || 0; // frete que o vendedor paga
   const freteComprador = config.freteComprador || 0;
   const embalagem = config.custoEmbalagem;
