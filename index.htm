@@ -726,6 +726,13 @@
             <option value="203654110">🏪 Parque do Povo</option>
             <option value="203777302">🏬 Prudenshopping</option>
           </select>
+          <select id="filterSituacao" style="width:140px;">
+            <option value="">Todos os status</option>
+            <option value="9">✅ Atendido</option>
+            <option value="6">🕐 Em aberto</option>
+            <option value="12">🔄 Em andamento</option>
+            <option value="15">❌ Cancelado</option>
+          </select>
           <select id="filterMargem" style="width:130px;">
             <option value="">Todas margens</option>
             <option value="good">Boa (>15%)</option>
@@ -1165,9 +1172,13 @@ async function loadPedidos() {
     let temMais = true;
 
     while (temMais && pagina <= 10) {
+      const filterCanal = document.getElementById('filterCanal').value;
+      const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
       let params = `pagina=${pagina}&limite=100`;
       if (dateFrom) params += `&dataInicio=${dateFrom}`;
       if (dateTo)   params += `&dataFim=${dateTo}`;
+      if (filterCanal) params += `&idLoja=${filterCanal}`;
+      if (filterSituacao) params += `&idSituacao=${filterSituacao}`;
 
       const url = `${PROXY_URL}/bling/pedidos/vendas?${params}`;
       const resp = await fetch(url);
@@ -1432,6 +1443,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
   if (document.getElementById('filterCanal')) {
     document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+  }
+  if (document.getElementById('filterSituacao')) {
+    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); });
   }
   document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
