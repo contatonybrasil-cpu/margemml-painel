@@ -1163,8 +1163,15 @@ async function loadPedidos() {
   const spinner = document.getElementById('loadSpinner');
   spinner.style.display = 'inline';
 
+  // Lê filtros ANTES do loop
   const dateFrom = document.getElementById('filterDateFrom').value;
   const dateTo = document.getElementById('filterDateTo').value;
+  const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
+  const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
+
+  // Limpa cache
+  localStorage.removeItem('margemml_pedidos');
+  pedidosData = [];
 
   try {
     let todos = [];
@@ -1172,8 +1179,6 @@ async function loadPedidos() {
     let temMais = true;
 
     while (temMais && pagina <= 10) {
-      const filterCanal = document.getElementById('filterCanal').value;
-      const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
       let params = `pagina=${pagina}&limite=100`;
       if (dateFrom) params += `&dataInicio=${dateFrom}`;
       if (dateTo)   params += `&dataFim=${dateTo}`;
