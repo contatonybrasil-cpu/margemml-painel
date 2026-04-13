@@ -3,993 +3,652 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MargemML</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>NY Multimarcas — Gestão</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg: #06080b;
-  --bg2: #0c0f14;
-  --surface: #111620;
-  --surface2: #161c28;
-  --border: #1e2738;
-  --border2: #253045;
-  --gold: #c9a84c;
-  --gold2: #e8c96d;
-  --emerald: #2dd4a0;
-  --emerald2: #4eedb8;
-  --crimson: #e05555;
-  --sapphire: #4d8fff;
-  --amber: #f5a623;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --text3: #4a5568;
-  --font-display: 'Playfair Display', serif;
-  --font-ui: 'Outfit', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --radius: 4px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --bg: #080b12;
+  --bg2: #0d1120;
+  --surface: #111827;
+  --surface2: #162033;
+  --border: #1e2d45;
+  --border2: #243554;
+  --cyan: #00d4ff;
+  --cyan2: #00f0ff;
+  --green: #00e5a0;
+  --green2: #00ffb3;
+  --orange: #ff7c2a;
+  --orange2: #ff9a52;
+  --pink: #ff3d8a;
+  --gold: #ffd166;
+  --purple: #9b72ff;
+  --text: #f0f4ff;
+  --text2: #7a8fad;
+  --text3: #3a4d65;
+  --font: 'Cabinet Grotesk', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 8px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; overflow-x:hidden; }
 
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-ui);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Noise texture overlay */
+/* Animated bg */
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.4;
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 800px 600px at 20% 20%, rgba(0,212,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 500px at 80% 80%, rgba(0,229,160,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 400px 300px at 60% 10%, rgba(155,114,255,0.03) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+  animation: bgpulse 8s ease-in-out infinite alternate;
 }
 
-/* Gradient orbs */
-body::after {
-  content: '';
-  position: fixed;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%);
-  top: -200px; right: -100px;
-  pointer-events: none;
-  z-index: 0;
+@keyframes bgpulse {
+  from { opacity:0.7; }
+  to { opacity:1; }
 }
 
-.app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.app { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100vh; }
 
 /* ===== HEADER ===== */
 header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  height: 56px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(6,8,11,0.92);
-  backdrop-filter: blur(20px);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:60px;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,11,18,0.95);
+  backdrop-filter:blur(20px);
+  position:sticky; top:0; z-index:100;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.logo img { height:36px; width:auto; }
 
-.logo-mark {
-  width: 28px; height: 28px;
-  border: 1px solid var(--gold);
-  border-radius: 2px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-
-.logo-mark::before {
-  content: '';
-  position: absolute;
-  width: 10px; height: 10px;
-  background: var(--gold);
-  border-radius: 1px;
-  animation: pulse-gold 3s infinite;
-}
-
-@keyframes pulse-gold {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.8); }
-}
-
-.logo-text {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text);
-}
-
-.logo-text em {
-  font-style: normal;
-  color: var(--gold);
-}
-
-.header-center {
-  display: flex;
-  gap: 0;
-}
+.nav { display:flex; gap:2px; }
 
 .nav-item {
-  padding: 0 20px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--text3);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  position: relative;
+  padding:0 18px; height:60px;
+  display:flex; align-items:center;
+  font-size:12px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--text3); cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all 0.2s;
 }
-
-.nav-item:hover { color: var(--text2); }
-.nav-item.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.nav-item:hover { color:var(--text2); }
+.nav-item.active { color:var(--cyan); border-bottom-color:var(--cyan); }
 
 .status-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.5px;
-  border: 1px solid var(--border2);
-  color: var(--text3);
-  transition: all 0.3s;
+  display:flex; align-items:center; gap:7px;
+  padding:6px 14px; border-radius:20px;
+  font-family:var(--mono); font-size:10px;
+  border:1px solid var(--border2); color:var(--text3);
+  transition:all 0.3s;
 }
-
 .status-pill.connected {
-  border-color: rgba(45,212,160,0.3);
-  color: var(--emerald);
-  background: rgba(45,212,160,0.06);
+  border-color:rgba(0,229,160,0.4); color:var(--green);
+  background:rgba(0,229,160,0.07);
+  box-shadow:0 0 12px rgba(0,229,160,0.1);
 }
-
-.pulse {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: blink 2s infinite;
-}
-
+.pulse { width:6px; height:6px; border-radius:50%; background:currentColor; animation:blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 /* ===== LAYOUT ===== */
-.layout { display: flex; flex: 1; }
+.layout { display:flex; flex:1; }
 
 /* ===== SIDEBAR ===== */
 .sidebar {
-  width: 220px;
-  min-width: 220px;
-  border-right: 1px solid var(--border);
-  padding: 24px 0;
-  background: rgba(12,15,20,0.6);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  width:210px; min-width:210px;
+  border-right:1px solid var(--border);
+  padding:20px 0;
+  background:rgba(13,17,32,0.7);
 }
 
 .sidebar-section {
-  padding: 4px 16px 12px;
-  font-size: 9px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text3);
-  font-family: var(--font-mono);
-  margin-top: 8px;
+  padding:16px 20px 8px;
+  font-size:9px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--text3); font-family:var(--mono);
 }
 
 .sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 20px;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.15s;
-  border-left: 2px solid transparent;
-  margin: 0 0 1px;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 20px; font-size:13px; font-weight:500;
+  color:var(--text2); cursor:pointer;
+  transition:all 0.15s;
+  border-left:2px solid transparent;
+  position:relative;
+}
+.sidebar-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+.sidebar-item.active { color:var(--cyan); border-left-color:var(--cyan); background:rgba(0,212,255,0.05); }
+.sidebar-item .dot { width:5px; height:5px; border-radius:50%; background:var(--text3); flex-shrink:0; transition:all 0.15s; }
+.sidebar-item.active .dot { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+.sidebar-item:hover .dot { background:var(--text2); }
+
+/* ===== MAIN ===== */
+.main { flex:1; overflow:hidden; }
+.section { display:none; padding:24px 28px; animation:fadeUp 0.25s ease; }
+.section.active { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== KPI GRID ===== */
+.kpi-grid {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
+  margin-bottom:24px;
 }
 
-.sidebar-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-.sidebar-item.active { color: var(--gold); border-left-color: var(--gold); background: rgba(201,168,76,0.05); }
-.sidebar-item .icon { width: 14px; text-align: center; font-size: 12px; opacity: 0.8; }
+.kpi-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 18px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color 0.2s, transform 0.2s;
+  cursor:default;
+}
+.kpi-card:hover { border-color:var(--border2); transform:translateY(-1px); }
 
-/* ===== MAIN CONTENT ===== */
-.main-content { flex: 1; overflow: hidden; }
-.section { display: none; padding: 28px 32px; animation: fadeIn 0.2s ease; }
-.section.active { display: block; }
-
-@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-
-/* ===== KPI STRIP ===== */
-.kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  margin-bottom: 24px;
+.kpi-glow {
+  position:absolute; top:0; left:0; right:0; height:1px;
+  opacity:0.8;
 }
 
-.kpi-block {
-  background: var(--surface);
-  padding: 20px 24px;
-  position: relative;
-  transition: background 0.2s;
+.kpi-bg-chart {
+  position:absolute; bottom:0; right:0; left:0;
+  height:50px; opacity:0.15;
 }
 
-.kpi-block:hover { background: var(--surface2); }
-
-.kpi-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 12px;
+.kpi-label {
+  font-size:10px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--text3); margin-bottom:10px;
+  font-family:var(--mono);
 }
 
-.kpi-num {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.5px;
-  line-height: 1;
-  margin-bottom: 6px;
+.kpi-value {
+  font-size:22px; font-weight:800;
+  letter-spacing:-0.5px; line-height:1;
+  margin-bottom:6px;
 }
 
-.kpi-num.positive { color: var(--emerald); }
-.kpi-num.negative { color: var(--crimson); }
-.kpi-num.gold { color: var(--gold); }
-
-.kpi-meta {
-  font-size: 11px;
-  color: var(--text3);
-  font-family: var(--font-mono);
+.kpi-sub {
+  font-size:11px; color:var(--text3);
+  font-family:var(--mono);
 }
 
-.kpi-accent {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 2px;
+.kpi-chart-wrap {
+  height:40px; margin-top:10px;
+  position:relative;
 }
 
 /* ===== TOOLBAR ===== */
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  gap: 12px;
-  flex-wrap: wrap;
+  display:flex; align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px; gap:12px; flex-wrap:wrap;
 }
 
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.toolbar-left { display:flex; align-items:center; gap:10px; }
+
+.page-title {
+  font-size:18px; font-weight:800;
+  letter-spacing:-0.3px;
 }
 
-.toolbar-title {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
+.count-tag {
+  font-family:var(--mono); font-size:10px;
+  padding:3px 9px; border-radius:4px;
+  background:var(--surface2); border:1px solid var(--border2);
+  color:var(--text3);
 }
 
-.count-badge {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 2px;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text3);
-  letter-spacing: 0.5px;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+.toolbar-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
 /* ===== INPUTS ===== */
-input[type="date"], select, input[type="number"], input[type="text"], input[type="password"] {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 7px 10px;
-  outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
-  letter-spacing: 0.3px;
+input, select {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  color:var(--text); font-family:var(--mono);
+  font-size:11px; padding:7px 10px;
+  outline:none; transition:border-color 0.15s;
+  width:100%;
 }
-
-input:focus, select:focus { border-color: var(--gold); }
-select option { background: var(--surface); }
+input:focus, select:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,212,255,0.1); }
+select option { background:var(--surface); }
 
 /* ===== BUTTONS ===== */
 .btn {
-  padding: 8px 16px;
-  border-radius: var(--radius);
-  font-family: var(--font-ui);
-  font-weight: 500;
-  font-size: 12px;
-  cursor: pointer;
-  border: none;
-  transition: all 0.15s;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  display: flex; align-items: center; gap: 6px;
+  padding:8px 18px; border-radius:6px;
+  font-family:var(--font); font-weight:700;
+  font-size:12px; cursor:pointer; border:none;
+  transition:all 0.15s; letter-spacing:0.3px;
+  white-space:nowrap; display:flex; align-items:center; gap:6px;
 }
 
-.btn-gold {
-  background: var(--gold);
-  color: #06080b;
+.btn-cyan {
+  background:linear-gradient(135deg, var(--cyan), var(--purple));
+  color:#080b12;
+  box-shadow:0 4px 15px rgba(0,212,255,0.2);
 }
-.btn-gold:hover { background: var(--gold2); }
+.btn-cyan:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,212,255,0.3); }
 
 .btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border2);
-  color: var(--text2);
+  background:transparent; border:1px solid var(--border2); color:var(--text2);
 }
-.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
-
-.btn-danger {
-  background: rgba(224,85,85,0.1);
-  border: 1px solid rgba(224,85,85,0.3);
-  color: var(--crimson);
-}
+.btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
 
 /* ===== TABLE ===== */
-.table-container {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--surface);
+.table-wrap {
+  border:1px solid var(--border);
+  border-radius:var(--r); overflow:hidden;
+  background:var(--surface);
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
+.data-table { width:100%; border-collapse:collapse; font-size:12px; }
 
 .data-table thead th {
-  background: var(--bg2);
-  padding: 11px 14px;
-  text-align: left;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text3);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  font-weight: 400;
+  background:var(--bg2); padding:11px 14px;
+  text-align:left; font-family:var(--mono);
+  font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--text3); border-bottom:1px solid var(--border);
+  font-weight:400; white-space:nowrap;
 }
 
 .data-table tbody tr {
-  border-bottom: 1px solid rgba(30,39,56,0.6);
-  transition: background 0.1s;
-  cursor: pointer;
+  border-bottom:1px solid rgba(30,45,69,0.5);
+  transition:background 0.1s; cursor:pointer;
 }
-
-.data-table tbody tr:hover { background: rgba(201,168,76,0.03); }
-.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background:rgba(0,212,255,0.03); }
+.data-table tbody tr:last-child { border-bottom:none; }
 
 .data-table td {
-  padding: 11px 14px;
-  font-family: var(--font-mono);
-  color: var(--text3);
-  white-space: nowrap;
-  font-size: 11.5px;
+  padding:11px 14px; font-family:var(--mono);
+  color:var(--text3); white-space:nowrap; font-size:11.5px;
 }
 
-.data-table td.primary { color: var(--text); font-weight: 500; }
-.data-table td.positive { color: var(--emerald); }
-.data-table td.negative { color: var(--crimson); }
-.data-table td.muted { color: var(--text3); }
-.data-table td.gold { color: var(--gold); }
-.data-table td.warning { color: var(--amber); }
+.data-table td.hi { color:var(--text); font-weight:600; }
+.data-table td.pos { color:var(--green); }
+.data-table td.neg { color:var(--pink); }
+.data-table td.warn { color:var(--orange); }
+.data-table td.gold { color:var(--gold); }
 
-/* ===== CHANNEL BADGE ===== */
-.ch-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  border-radius: 2px;
-  font-size: 9px;
-  letter-spacing: 0.5px;
-  font-family: var(--font-mono);
-  border: 1px solid;
+/* Channel badges */
+.ch {
+  display:inline-flex; align-items:center;
+  padding:2px 8px; border-radius:3px;
+  font-size:9px; letter-spacing:0.5px;
+  font-family:var(--mono); border:1px solid; font-weight:500;
 }
+.ch-ml   { border-color:rgba(255,209,102,0.3); color:var(--gold); background:rgba(255,209,102,0.06); }
+.ch-phy  { border-color:rgba(0,212,255,0.3); color:var(--cyan); background:rgba(0,212,255,0.06); }
+.ch-mkt  { border-color:rgba(0,229,160,0.3); color:var(--green); background:rgba(0,229,160,0.06); }
 
-.ch-ml { border-color: rgba(255,197,66,0.3); color: var(--amber); background: rgba(255,197,66,0.06); }
-.ch-loja { border-color: rgba(77,143,255,0.3); color: var(--sapphire); background: rgba(77,143,255,0.06); }
-.ch-mkt { border-color: rgba(45,212,160,0.3); color: var(--emerald); background: rgba(45,212,160,0.06); }
+/* Margin bar */
+.mbar { display:flex; align-items:center; gap:7px; }
+.mtrack { width:48px; height:3px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.mfill { height:100%; border-radius:2px; transition:width 0.4s ease; }
 
-/* ===== MARGIN BAR ===== */
-.margin-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.margin-track {
-  width: 50px; height: 3px;
-  background: var(--border2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.margin-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
-
-/* ===== STATUS CHIPS ===== */
+/* Status chips */
 .chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 2px;
-  font-size: 9px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.5px;
-  border: 1px solid;
+  display:inline-flex; align-items:center;
+  padding:2px 8px; border-radius:3px;
+  font-size:9px; font-family:var(--mono);
+  letter-spacing:0.5px; border:1px solid; font-weight:500;
 }
-
-.chip-ok { border-color: rgba(45,212,160,0.3); color: var(--emerald); background: rgba(45,212,160,0.06); }
-.chip-warn { border-color: rgba(245,166,35,0.3); color: var(--amber); background: rgba(245,166,35,0.06); }
-.chip-bad { border-color: rgba(224,85,85,0.3); color: var(--crimson); background: rgba(224,85,85,0.06); }
+.chip-ok   { border-color:rgba(0,229,160,0.3); color:var(--green); background:rgba(0,229,160,0.06); }
+.chip-warn { border-color:rgba(255,124,42,0.3); color:var(--orange); background:rgba(255,124,42,0.06); }
+.chip-bad  { border-color:rgba(255,61,138,0.3); color:var(--pink); background:rgba(255,61,138,0.06); }
 
 /* ===== PAGINATION ===== */
 .pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--text3);
-  font-family: var(--font-mono);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-top:1px solid var(--border);
+  font-size:11px; color:var(--text3); font-family:var(--mono);
 }
-
-.page-btns { display: flex; gap: 4px; }
-
+.page-btns { display:flex; gap:4px; }
 .page-btn {
-  padding: 4px 10px;
-  border-radius: var(--radius);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
+  padding:4px 10px; border-radius:5px;
+  background:var(--surface2); border:1px solid var(--border2);
+  color:var(--text3); font-family:var(--mono); font-size:11px;
+  cursor:pointer; transition:all 0.15s;
 }
+.page-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.page-btn.active { background:linear-gradient(135deg,var(--cyan),var(--purple)); color:var(--bg); border-color:transparent; }
+.page-btn:disabled { opacity:0.3; cursor:default; }
 
-.page-btn:hover { border-color: var(--gold); color: var(--gold); }
-.page-btn.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
-.page-btn:disabled { opacity: 0.3; cursor: default; }
-
-/* ===== EMPTY STATE ===== */
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.empty-icon { font-size: 32px; margin-bottom: 16px; opacity: 0.3; }
-.empty-title { font-family: var(--font-display); font-size: 20px; color: var(--text2); margin-bottom: 8px; }
-.empty-sub { font-size: 13px; color: var(--text3); line-height: 1.7; }
+/* ===== EMPTY ===== */
+.empty { text-align:center; padding:80px 20px; }
+.empty-icon { font-size:36px; margin-bottom:16px; opacity:0.2; }
+.empty-title { font-size:20px; font-weight:700; color:var(--text2); margin-bottom:8px; }
+.empty-sub { font-size:13px; color:var(--text3); line-height:1.7; }
 
 /* ===== SPINNER ===== */
 .spinner {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border: 1.5px solid rgba(201,168,76,0.2);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  display:inline-block; width:12px; height:12px;
+  border:1.5px solid rgba(0,212,255,0.2); border-top-color:var(--cyan);
+  border-radius:50%; animation:spin 0.7s linear infinite;
 }
-
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { to{transform:rotate(360deg)} }
 
 /* ===== MODAL ===== */
 .modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(12px);
-  z-index: 300;
-  align-items: center;
-  justify-content: center;
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.8); backdrop-filter:blur(16px);
+  z-index:300; align-items:center; justify-content:center;
 }
-
-.modal-overlay.show { display: flex; }
-
+.modal-overlay.show { display:flex; }
 .modal {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  width: 520px;
-  max-width: 95vw;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalIn 0.2s ease;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:12px; width:520px; max-width:95vw;
+  max-height:90vh; overflow-y:auto;
+  animation:modalIn 0.2s ease;
+  box-shadow:0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,212,255,0.05);
 }
-
-@keyframes modalIn { from{opacity:0;transform:scale(0.97) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
-
+@keyframes modalIn { from{opacity:0;transform:scale(0.96)translateY(10px)} to{opacity:1;transform:scale(1)translateY(0)} }
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:22px 24px 16px; border-bottom:1px solid var(--border);
 }
-
-.modal-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.4;
-  flex: 1;
-  padding-right: 16px;
-}
-
+.modal-title { font-size:16px; font-weight:700; flex:1; padding-right:16px; line-height:1.4; }
 .modal-close {
-  background: none;
-  border: none;
-  color: var(--text3);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: var(--radius);
-  transition: all 0.15s;
-  flex-shrink: 0;
+  background:none; border:none; color:var(--text3);
+  font-size:16px; cursor:pointer; padding:2px 6px;
+  border-radius:4px; transition:all 0.15s;
 }
-.modal-close:hover { background: var(--surface2); color: var(--text); }
-
-.modal-body { padding: 20px 24px 24px; }
-
-.breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(30,39,56,0.8);
-  font-size: 12px;
+.modal-close:hover { background:var(--surface2); color:var(--text); }
+.modal-body { padding:20px 24px 24px; }
+.brow {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid rgba(30,45,69,0.6);
+  font-size:12px;
 }
-.breakdown-row:last-child { border-bottom: none; }
-.breakdown-label { color: var(--text3); font-family: var(--font-mono); font-size: 11px; }
-.breakdown-value { font-family: var(--font-mono); font-size: 12px; }
-.breakdown-value.positive { color: var(--emerald); }
-.breakdown-value.negative { color: var(--crimson); }
-.breakdown-value.warning { color: var(--amber); }
-
-.breakdown-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  background: var(--surface2);
-  border-radius: var(--radius);
-  margin-top: 12px;
-  border: 1px solid var(--border2);
+.brow:last-child { border-bottom:none; }
+.brow-label { color:var(--text3); font-family:var(--mono); font-size:11px; }
+.brow-val { font-family:var(--mono); font-size:12px; }
+.brow-val.pos { color:var(--green); }
+.brow-val.neg { color:var(--pink); }
+.brow-val.warn { color:var(--orange); }
+.btotal {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 16px;
+  background:linear-gradient(135deg, rgba(0,212,255,0.06), rgba(155,114,255,0.06));
+  border-radius:8px; margin-top:12px;
+  border:1px solid var(--border2);
 }
-.breakdown-total .label { font-family: var(--font-ui); font-weight: 600; font-size: 13px; }
-.breakdown-total .value { font-family: var(--font-display); font-size: 20px; }
+.btotal .label { font-weight:700; font-size:13px; }
+.btotal .value { font-size:20px; font-weight:800; }
 
 /* ===== CONFIG ===== */
-.config-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+.cfg-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.cfg-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:20px;
 }
-
-.config-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
+.cfg-title {
+  font-family:var(--mono); font-size:9px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--cyan);
+  margin-bottom:16px; padding-bottom:12px;
+  border-bottom:1px solid var(--border);
 }
+.field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spacing:0.3px; }
+.frow { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.iw { position:relative; }
+.iw .pre { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text3); font-family:var(--mono); font-size:10px; }
+.iw input { padding-left:22px; }
+.full { grid-column:1/-1; }
 
-.config-card-title {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
+/* ===== TAXAS ===== */
+.taxas-table { width:100%; border-collapse:collapse; font-size:12px; }
+.taxas-table th { text-align:left; padding:10px 12px; font-family:var(--mono); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); border-bottom:1px solid var(--border); font-weight:400; }
+.taxas-table td { padding:10px 12px; border-bottom:1px solid rgba(30,45,69,0.4); color:var(--text); }
+.taxas-table tr:hover td { background:rgba(0,212,255,0.02); }
+.taxas-table input { width:80px; padding:5px 8px; font-size:11px; text-align:right; }
 
-.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-label { font-family: var(--font-mono); font-size: 10px; color: var(--text3); letter-spacing: 0.3px; }
+/* ===== ALERTS ===== */
+.alert { border-radius:6px; padding:10px 14px; font-size:12px; margin-top:12px; display:none; font-family:var(--mono); }
+.alert.show { display:flex; align-items:center; gap:8px; }
+.alert-success { background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); color:var(--green); }
+.alert-error   { background:rgba(255,61,138,0.08); border:1px solid rgba(255,61,138,0.2); color:var(--pink); }
+.alert-warn    { background:rgba(255,124,42,0.08); border:1px solid rgba(255,124,42,0.2); color:var(--orange); }
+.nota { background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:6px; padding:12px 14px; font-size:11px; color:var(--cyan); line-height:1.6; margin-top:12px; font-family:var(--mono); }
 
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.input-wrap { position: relative; }
-.input-wrap .pre { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
-.input-wrap input { padding-left: 22px; }
-
-.full-col { grid-column: 1 / -1; }
-
-/* ===== TAXAS TABLE ===== */
-.taxas-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.taxas-table th { text-align: left; padding: 10px 12px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); font-weight: 400; }
-.taxas-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,39,56,0.5); color: var(--text); }
-.taxas-table tr:hover td { background: rgba(201,168,76,0.02); }
-.taxas-table input { width: 80px; padding: 5px 8px; font-size: 11px; text-align: right; }
-
-/* ===== ALERT ===== */
-.alert { border-radius: var(--radius); padding: 10px 14px; font-size: 12px; margin-top: 12px; display: none; font-family: var(--font-mono); }
-.alert.show { display: flex; align-items: center; gap: 8px; }
-.alert-success { background: rgba(45,212,160,0.08); border: 1px solid rgba(45,212,160,0.2); color: var(--emerald); }
-.alert-error { background: rgba(224,85,85,0.08); border: 1px solid rgba(224,85,85,0.2); color: var(--crimson); }
-.alert-warn { background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.2); color: var(--amber); }
-
-.nota { background: rgba(77,143,255,0.06); border: 1px solid rgba(77,143,255,0.15); border-radius: var(--radius); padding: 12px 14px; font-size: 11px; color: var(--sapphire); line-height: 1.6; margin-top: 12px; font-family: var(--font-mono); }
-
-@media (max-width: 900px) {
-  .sidebar { display: none; }
-  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
-  .config-layout { grid-template-columns: 1fr; }
-  .section { padding: 16px; }
-  header { padding: 0 16px; }
+@media(max-width:900px) {
+  .sidebar { display:none; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); }
+  .cfg-grid { grid-template-columns:1fr; }
+  .section { padding:16px; }
+  header { padding:0 16px; }
 }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <div class="logo-mark"></div>
-      <div class="logo-text">Margem<em>ML</em></div>
+<header>
+  <div class="logo">
+    <img src="data:image/png;base64,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" alt="New York Multimarcas" style="height:34px;width:auto;" />
+  </div>
+  <div class="nav">
+    <div class="nav-item active" onclick="showTab('pedidos')">Pedidos</div>
+    <div class="nav-item" onclick="showTab('config')">Configurações</div>
+    <div class="nav-item" onclick="showTab('taxas')">Taxas</div>
+  </div>
+  <div class="status-pill" id="statusBadge">
+    <div class="pulse"></div>
+    <span id="statusText">Desconectado</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Canais</div>
+    <div class="sidebar-item active" onclick="setSidebarCanal('')" id="sb-all"><div class="dot"></div>Todos os canais</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('203628722')" id="sb-ml"><div class="dot"></div>Mercado Livre</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('203953121')" id="sb-mag"><div class="dot"></div>Magalu</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('205397393')" id="sb-net"><div class="dot"></div>Netshoes</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('205401394')" id="sb-amz"><div class="dot"></div>Amazon</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('206006851')" id="sb-tik"><div class="dot"></div>TikTok Shop</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('206029808')" id="sb-sho"><div class="dot"></div>Shopee</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('205389906')" id="sb-site"><div class="dot"></div>Site</div>
+    <div class="sidebar-section">Lojas Físicas</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('203654110')" id="sb-pp"><div class="dot"></div>Parque do Povo</div>
+    <div class="sidebar-item" onclick="setSidebarCanal('203777302')" id="sb-ps"><div class="dot"></div>Prudenshopping</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PEDIDOS -->
+    <div class="section active" id="tab-pedidos">
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--green),transparent);"></div>
+          <div class="kpi-label">Lucro Líquido</div>
+          <div class="kpi-value" id="kpi-lucro" style="color:var(--green);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-lucro-sub">no período</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-lucro"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--cyan),transparent);"></div>
+          <div class="kpi-label">Receita Bruta</div>
+          <div class="kpi-value" id="kpi-receita" style="color:var(--cyan);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-receita-sub">0 pedidos</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-receita"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--orange),transparent);"></div>
+          <div class="kpi-label">Taxas Canal</div>
+          <div class="kpi-value" id="kpi-taxas" style="color:var(--orange);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-taxas-sub">comissões</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-taxas"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--gold),transparent);"></div>
+          <div class="kpi-label">Impostos SN</div>
+          <div class="kpi-value" id="kpi-impostos" style="color:var(--gold);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-impostos-sub">Simples Nacional</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-impostos"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--purple),transparent);"></div>
+          <div class="kpi-label">Margem Média</div>
+          <div class="kpi-value" id="kpi-margem" style="color:var(--purple);">0%</div>
+          <div class="kpi-sub" id="kpi-margem-sub">líquida</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-margem"></canvas></div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="page-title">Pedidos</div>
+          <div class="count-tag" id="totalBadge">0 pedidos</div>
+        </div>
+        <div class="toolbar-right">
+          <input type="date" id="filterDateFrom" style="width:130px;" />
+          <span style="color:var(--text3);font-size:11px;font-family:var(--mono);">—</span>
+          <input type="date" id="filterDateTo" style="width:130px;" />
+          <select id="filterCanal" style="width:148px;">
+            <option value="">Todos os canais</option>
+            <option value="203628722">Mercado Livre</option>
+            <option value="203953121">Magalu</option>
+            <option value="205397393">Netshoes</option>
+            <option value="205401394">Amazon</option>
+            <option value="206006851">TikTok Shop</option>
+            <option value="206029808">Shopee</option>
+            <option value="205389906">Site</option>
+            <option value="203654110">Parque do Povo</option>
+            <option value="203777302">Prudenshopping</option>
+          </select>
+          <select id="filterSituacao" style="width:120px;">
+            <option value="">Todos status</option>
+            <option value="9">Atendido</option>
+            <option value="6">Em aberto</option>
+            <option value="12">Em andamento</option>
+            <option value="15">Cancelado</option>
+          </select>
+          <select id="filterMargem" style="width:120px;">
+            <option value="">Todas margens</option>
+            <option value="good">Boa (&gt;15%)</option>
+            <option value="warn">Atenção (5–15%)</option>
+            <option value="bad">Negativa (&lt;5%)</option>
+          </select>
+          <button class="btn btn-cyan" onclick="loadPedidos()">
+            <span id="loadSpinner" style="display:none;"><span class="spinner"></span></span>
+            Sincronizar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Pedido</th><th>Data</th><th>Canal</th><th>Produto</th>
+              <th>Venda</th><th>CMV</th><th>Taxa</th><th>Imposto</th>
+              <th>Lucro</th><th>Margem</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody">
+            <tr><td colspan="11">
+              <div class="empty">
+                <div class="empty-icon">⬡</div>
+                <div class="empty-title">Aguardando sincronização</div>
+                <div class="empty-sub">Selecione o período e clique em Sincronizar</div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="paginationRow" style="display:none;">
+          <span id="paginationInfo"></span>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
+      </div>
     </div>
-    <div class="header-center">
-      <div class="nav-item active" onclick="showTab('pedidos')">Pedidos</div>
-      <div class="nav-item" onclick="showTab('config')">Configurações</div>
-      <div class="nav-item" onclick="showTab('taxas')">Taxas</div>
+
+    <!-- CONFIG -->
+    <div class="section" id="tab-config">
+      <div style="margin-bottom:20px;">
+        <div class="page-title">Configurações</div>
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px;">Parâmetros de cálculo e conexão</div>
+      </div>
+      <div class="cfg-card" style="margin-bottom:14px;">
+        <div class="cfg-title">Conexão Bling</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;">
+          <div class="field" style="flex:1;margin-bottom:0;">
+            <label>Servidor proxy</label>
+            <input type="text" id="blingKey" value="https://margemml-proxy.onrender.com" readonly style="color:var(--green);cursor:default;" />
+          </div>
+          <button class="btn btn-cyan" onclick="testarConexao()">Testar</button>
+          <button class="btn btn-ghost" onclick="salvarConfig()">Salvar</button>
+        </div>
+        <div class="alert alert-success" id="alertSuccess">✓ <span id="alertSuccessMsg"></span></div>
+        <div class="alert alert-error" id="alertError">✕ <span id="alertErrorMsg"></span></div>
+        <div class="alert alert-warn" id="alertWarn">⚠ <span id="alertWarnMsg"></span></div>
+        <div class="nota">Token do Bling protegido no servidor — nunca exposto no navegador.</div>
+      </div>
+      <div class="cfg-grid">
+        <div class="cfg-card">
+          <div class="cfg-title">Custos Operacionais</div>
+          <div class="frow">
+            <div class="field"><label>Embalagem (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoEmbalagem" value="2.50" min="0" step="0.01"/></div></div>
+            <div class="field"><label>Operacional (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoOperacional" value="1.00" min="0" step="0.01"/></div></div>
+            <div class="field"><label>Taxa padrão (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="taxaMLPadrao" value="12" min="0" max="30" step="0.1"/></div></div>
+            <div class="field"><label>CMV padrão (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="cmvPadrao" value="45" min="0" max="100" step="1"/></div></div>
+          </div>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-title">Simples Nacional</div>
+          <div class="frow">
+            <div class="field"><label>Alíquota efetiva (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="aliquotaSN" value="10" min="0" max="19" step="0.01"/></div></div>
+            <div class="field"><label>Faixa de faturamento</label><select id="faixaSN"><option value="180000">Até R$ 180k</option><option value="360000">Até R$ 360k</option><option value="720000" selected>Até R$ 720k</option><option value="1800000">Até R$ 1,8M</option><option value="3600000">Até R$ 3,6M</option></select></div>
+            <div class="field"><label>Anexo</label><select id="anexoSN"><option value="I">Anexo I — Comércio</option><option value="II">Anexo II — Indústria</option><option value="III">Anexo III — Serviços</option></select></div>
+            <div class="field"><label>Frete comprador (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="freteComprador" value="0" min="0" step="0.01"/></div></div>
+          </div>
+        </div>
+        <div class="cfg-card full">
+          <div class="cfg-title">Metas de Margem</div>
+          <div class="frow">
+            <div class="field"><label>Margem mínima (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="margemMin" value="5" min="0" step="1"/></div></div>
+            <div class="field"><label>Margem alvo (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="margemAlvo" value="15" min="0" step="1"/></div></div>
+            <div class="field"><label>Margem excelente (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="margemExc" value="25" min="0" step="1"/></div></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-cyan" onclick="salvarConfig()">Salvar configurações</button>
+            <button class="btn btn-ghost" onclick="resetConfig()">Restaurar padrões</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="header-right">
-      <div class="status-pill" id="statusBadge">
-        <div class="pulse"></div>
-        <span id="statusText">Desconectado</span>
-      </div>
-    </div>
-  </header>
 
-  <div class="layout">
-
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sidebar-section">Canais</div>
-      <div class="sidebar-item active" onclick="setSidebarCanal('')" id="sb-all">
-        <span class="icon">◈</span> Todos os canais
+    <!-- TAXAS -->
+    <div class="section" id="tab-taxas">
+      <div style="margin-bottom:20px;">
+        <div class="page-title">Taxas por Canal</div>
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px;">Configure a comissão de cada marketplace</div>
       </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('203628722')" id="sb-ml">
-        <span class="icon">▸</span> Mercado Livre
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('203953121')" id="sb-mag">
-        <span class="icon">▸</span> Magalu
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('205397393')" id="sb-net">
-        <span class="icon">▸</span> Netshoes
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('205401394')" id="sb-amz">
-        <span class="icon">▸</span> Amazon
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('206006851')" id="sb-tik">
-        <span class="icon">▸</span> TikTok Shop
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('206029808')" id="sb-sho">
-        <span class="icon">▸</span> Shopee
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('205389906')" id="sb-site">
-        <span class="icon">▸</span> Site
-      </div>
-      <div class="sidebar-section">Lojas Físicas</div>
-      <div class="sidebar-item" onclick="setSidebarCanal('203654110')" id="sb-pp">
-        <span class="icon">▸</span> Parque do Povo
-      </div>
-      <div class="sidebar-item" onclick="setSidebarCanal('203777302')" id="sb-ps">
-        <span class="icon">▸</span> Prudenshopping
+      <div class="cfg-card">
+        <div class="cfg-title">Comissões</div>
+        <table class="taxas-table">
+          <thead><tr><th>Canal</th><th>Taxa (%)</th><th>Tipo</th></tr></thead>
+          <tbody id="taxasCanalBody"></tbody>
+        </table>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-cyan" onclick="salvarTaxasCanal()">Salvar taxas</button>
+          <button class="btn btn-ghost" onclick="resetTaxasCanal()">Restaurar padrões</button>
+        </div>
       </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="main-content">
-
-      <!-- PEDIDOS -->
-      <div class="section active" id="tab-pedidos">
-
-        <div class="kpi-strip">
-          <div class="kpi-block">
-            <div class="kpi-accent" style="background:var(--emerald);"></div>
-            <div class="kpi-tag">Lucro Líquido</div>
-            <div class="kpi-num positive" id="kpi-lucro">R$ 0</div>
-            <div class="kpi-meta" id="kpi-lucro-sub">no período</div>
-          </div>
-          <div class="kpi-block">
-            <div class="kpi-accent" style="background:var(--sapphire);"></div>
-            <div class="kpi-tag">Receita Bruta</div>
-            <div class="kpi-num" id="kpi-receita">R$ 0</div>
-            <div class="kpi-meta" id="kpi-receita-sub">0 pedidos</div>
-          </div>
-          <div class="kpi-block">
-            <div class="kpi-accent" style="background:var(--amber);"></div>
-            <div class="kpi-tag">Taxas Canal</div>
-            <div class="kpi-num warning" id="kpi-taxas">R$ 0</div>
-            <div class="kpi-meta" id="kpi-taxas-sub">comissões</div>
-          </div>
-          <div class="kpi-block">
-            <div class="kpi-accent" style="background:var(--gold);"></div>
-            <div class="kpi-tag">Impostos SN</div>
-            <div class="kpi-num gold" id="kpi-impostos">R$ 0</div>
-            <div class="kpi-meta" id="kpi-impostos-sub">Simples Nacional</div>
-          </div>
-          <div class="kpi-block">
-            <div class="kpi-accent" style="background:var(--crimson);"></div>
-            <div class="kpi-tag">Margem Média</div>
-            <div class="kpi-num" id="kpi-margem">0%</div>
-            <div class="kpi-meta" id="kpi-margem-sub">líquida</div>
-          </div>
-        </div>
-
-        <div class="toolbar">
-          <div class="toolbar-left">
-            <div class="toolbar-title">Pedidos</div>
-            <div class="count-badge" id="totalBadge">0</div>
-          </div>
-          <div class="toolbar-right">
-            <input type="date" id="filterDateFrom" style="width:130px;" />
-            <span style="color:var(--text3);font-size:11px;font-family:var(--font-mono);">—</span>
-            <input type="date" id="filterDateTo" style="width:130px;" />
-            <select id="filterCanal" style="width:150px;">
-              <option value="">Todos os canais</option>
-              <option value="203628722">Mercado Livre</option>
-              <option value="203953121">Magalu</option>
-              <option value="205397393">Netshoes</option>
-              <option value="205401394">Amazon</option>
-              <option value="206006851">TikTok Shop</option>
-              <option value="206029808">Shopee</option>
-              <option value="205389906">Site</option>
-              <option value="203654110">Parque do Povo</option>
-              <option value="203777302">Prudenshopping</option>
-            </select>
-            <select id="filterSituacao" style="width:130px;">
-              <option value="">Todos status</option>
-              <option value="9">Atendido</option>
-              <option value="6">Em aberto</option>
-              <option value="12">Em andamento</option>
-              <option value="15">Cancelado</option>
-            </select>
-            <select id="filterMargem" style="width:120px;">
-              <option value="">Todas margens</option>
-              <option value="good">Boa (&gt;15%)</option>
-              <option value="warn">Atenção (5–15%)</option>
-              <option value="bad">Negativa (&lt;5%)</option>
-            </select>
-            <button class="btn btn-gold" onclick="loadPedidos()">
-              <span id="loadSpinner" style="display:none;"><span class="spinner"></span></span>
-              Sincronizar
-            </button>
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pedido</th>
-                <th>Data</th>
-                <th>Canal</th>
-                <th>Produto</th>
-                <th>Venda</th>
-                <th>CMV</th>
-                <th>Taxa</th>
-                <th>Imposto</th>
-                <th>Lucro</th>
-                <th>Margem</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="ordersBody">
-              <tr><td colspan="11">
-                <div class="empty-state">
-                  <div class="empty-icon">◈</div>
-                  <div class="empty-title">Aguardando sincronização</div>
-                  <div class="empty-sub">Selecione o período e clique em Sincronizar</div>
-                </div>
-              </td></tr>
-            </tbody>
-          </table>
-          <div class="pagination" id="paginationRow" style="display:none;">
-            <span id="paginationInfo"></span>
-            <div class="page-btns" id="pageBtns"></div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- CONFIG -->
-      <div class="section" id="tab-config">
-        <div style="margin-bottom:20px;">
-          <div class="toolbar-title" style="margin-bottom:4px;">Configurações</div>
-          <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono);">Parâmetros de cálculo e conexão</div>
-        </div>
-
-        <div class="config-card" style="margin-bottom:16px;">
-          <div class="config-card-title">Conexão Bling</div>
-          <div style="display:flex;gap:10px;align-items:flex-end;">
-            <div class="field" style="flex:1;margin-bottom:0;">
-              <label>Servidor proxy</label>
-              <input type="text" id="blingKey" value="https://margemml-proxy.onrender.com" readonly style="color:var(--emerald);cursor:default;" />
-            </div>
-            <button class="btn btn-gold" onclick="testarConexao()">Testar</button>
-            <button class="btn btn-ghost" onclick="salvarConfig()">Salvar</button>
-          </div>
-          <div class="alert alert-success" id="alertSuccess">✓ <span id="alertSuccessMsg"></span></div>
-          <div class="alert alert-error" id="alertError">✕ <span id="alertErrorMsg"></span></div>
-          <div class="alert alert-warn" id="alertWarn">⚠ <span id="alertWarnMsg"></span></div>
-          <div class="nota">O token do Bling fica seguro no servidor Render — nunca exposto no navegador.</div>
-        </div>
-
-        <div class="config-layout">
-          <div class="config-card">
-            <div class="config-card-title">Custos Operacionais</div>
-            <div class="field-row">
-              <div class="field">
-                <label>Embalagem (R$)</label>
-                <div class="input-wrap"><span class="pre">R$</span><input type="number" id="custoEmbalagem" value="2.50" min="0" step="0.01" /></div>
-              </div>
-              <div class="field">
-                <label>Operacional (R$)</label>
-                <div class="input-wrap"><span class="pre">R$</span><input type="number" id="custoOperacional" value="1.00" min="0" step="0.01" /></div>
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>Taxa padrão (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="taxaMLPadrao" value="12" min="0" max="30" step="0.1" /></div>
-              </div>
-              <div class="field">
-                <label>CMV padrão (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="cmvPadrao" value="45" min="0" max="100" step="1" /></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="config-card">
-            <div class="config-card-title">Simples Nacional</div>
-            <div class="field-row">
-              <div class="field">
-                <label>Alíquota efetiva (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="aliquotaSN" value="10" min="0" max="19" step="0.01" /></div>
-              </div>
-              <div class="field">
-                <label>Faixa de faturamento</label>
-                <select id="faixaSN">
-                  <option value="180000">Até R$ 180k</option>
-                  <option value="360000">Até R$ 360k</option>
-                  <option value="720000" selected>Até R$ 720k</option>
-                  <option value="1800000">Até R$ 1,8M</option>
-                  <option value="3600000">Até R$ 3,6M</option>
-                </select>
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>Anexo</label>
-                <select id="anexoSN">
-                  <option value="I">Anexo I — Comércio</option>
-                  <option value="II">Anexo II — Indústria</option>
-                  <option value="III">Anexo III — Serviços</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Frete comprador (R$)</label>
-                <div class="input-wrap"><span class="pre">R$</span><input type="number" id="freteComprador" value="0" min="0" step="0.01" /></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="config-card full-col">
-            <div class="config-card-title">Metas de Margem</div>
-            <div class="field-row">
-              <div class="field">
-                <label>Margem mínima (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="margemMin" value="5" min="0" step="1" /></div>
-              </div>
-              <div class="field">
-                <label>Margem alvo (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="margemAlvo" value="15" min="0" step="1" /></div>
-              </div>
-              <div class="field">
-                <label>Margem excelente (%)</label>
-                <div class="input-wrap"><span class="pre">%</span><input type="number" id="margemExc" value="25" min="0" step="1" /></div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:4px;">
-              <button class="btn btn-gold" onclick="salvarConfig()">Salvar configurações</button>
-              <button class="btn btn-ghost" onclick="resetConfig()">Restaurar padrões</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAXAS -->
-      <div class="section" id="tab-taxas">
-        <div style="margin-bottom:20px;">
-          <div class="toolbar-title" style="margin-bottom:4px;">Taxas por Canal</div>
-          <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono);">Configure a comissão de cada marketplace e canal de venda</div>
-        </div>
-        <div class="config-card">
-          <div class="config-card-title">Comissões</div>
-          <table class="taxas-table">
-            <thead>
-              <tr>
-                <th>Canal</th>
-                <th>Taxa (%)</th>
-                <th>Tipo</th>
-              </tr>
-            </thead>
-            <tbody id="taxasCanalBody"></tbody>
-          </table>
-          <div style="display:flex;gap:8px;margin-top:16px;">
-            <button class="btn btn-gold" onclick="salvarTaxasCanal()">Salvar taxas</button>
-            <button class="btn btn-ghost" onclick="resetTaxasCanal()">Restaurar padrões</button>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /main-content -->
-  </div><!-- /layout -->
+  </div><!-- /main -->
+</div><!-- /layout -->
 </div><!-- /app -->
 
 <!-- MODAL -->
@@ -1553,45 +1212,45 @@ function openModal(num) {
   const m = pedido;
 
   document.getElementById('modalContent').innerHTML = `
-    <div class="breakdown-row">
-      <span class="breakdown-label">📅 Data</span>
+    <div class="brow">
+      <span class="brow-label">📅 Data</span>
       <span class="breakdown-value">${m.data}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">🛒 Receita de Venda</span>
-      <span class="breakdown-value positive">${formatMoney(m.venda)}</span>
+    <div class="brow">
+      <span class="brow-label">🛒 Receita de Venda</span>
+      <span class="brow-val pos">${formatMoney(m.venda)}</span>
     </div>
-    <div class="breakdown-divider"></div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">📦 CMV (Custo do Produto)</span>
-      <span class="breakdown-value negative">– ${formatMoney(m.cmv)}</span>
+    <div style="height:1px;background:var(--border);margin:12px 0;"></div>
+    <div class="brow">
+      <span class="brow-label">📦 CMV (Custo do Produto)</span>
+      <span class="brow-val neg">– ${formatMoney(m.cmv)}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">🏪 Taxa ${m.canal || "Canal"} (${m.taxaPct || 0}%)</span>
-      <span class="breakdown-value negative">– ${formatMoney(m.taxaML)}</span>
+    <div class="brow">
+      <span class="brow-label">🏪 Taxa ${m.canal || "Canal"} (${m.taxaPct || 0}%)</span>
+      <span class="brow-val neg">– ${formatMoney(m.taxaML)}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">🚚 Frete (custo vendedor)</span>
-      <span class="breakdown-value negative">– ${formatMoney(m.frete)}</span>
+    <div class="brow">
+      <span class="brow-label">🚚 Frete (custo vendedor)</span>
+      <span class="brow-val neg">– ${formatMoney(m.frete)}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">📦 Embalagem</span>
-      <span class="breakdown-value negative">– ${formatMoney(m.embalagem)}</span>
+    <div class="brow">
+      <span class="brow-label">📦 Embalagem</span>
+      <span class="brow-val neg">– ${formatMoney(m.embalagem)}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">⚙️ Custo Operacional</span>
-      <span class="breakdown-value negative">– ${formatMoney(m.operacional)}</span>
+    <div class="brow">
+      <span class="brow-label">⚙️ Custo Operacional</span>
+      <span class="brow-val neg">– ${formatMoney(m.operacional)}</span>
     </div>
-    <div class="breakdown-row">
-      <span class="breakdown-label">🧾 Simples Nacional (${config.aliquotaSN}%)</span>
-      <span class="breakdown-value neutral">– ${formatMoney(m.imposto)}</span>
+    <div class="brow">
+      <span class="brow-label">🧾 Simples Nacional (${config.aliquotaSN}%)</span>
+      <span class="brow-val warn">– ${formatMoney(m.imposto)}</span>
     </div>
-    <div class="breakdown-divider"></div>
-    <div class="breakdown-total">
+    <div style="height:1px;background:var(--border);margin:12px 0;"></div>
+    <div class="btotal">
       <span class="label">💰 Lucro Líquido</span>
       <span class="value" style="color:${m.lucro>=0?'var(--accent)':'var(--danger)'};">${formatMoney(m.lucro)}</span>
     </div>
-    <div class="breakdown-total" style="margin-top:8px;">
+    <div class="btotal" style="margin-top:8px;">
       <span class="label">📊 Margem Líquida</span>
       <span class="value" style="color:${m.margem<config.margemMin?'var(--danger)':m.margem>=config.margemAlvo?'var(--accent)':'var(--warn)'};">${formatPct(m.margem)}</span>
     </div>
@@ -1622,6 +1281,135 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
 });
 
+
+
+// ===== CHARTS =====
+let kpiCharts = {};
+
+function initCharts() {
+  const chartConfigs = [
+    { id: 'chart-lucro', color: getComputedStyle(document.documentElement).getPropertyValue('--green').trim() },
+    { id: 'chart-receita', color: getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() },
+    { id: 'chart-taxas', color: getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() },
+    { id: 'chart-impostos', color: getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() },
+    { id: 'chart-margem', color: getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() },
+  ];
+
+  chartConfigs.forEach(cfg => {
+    const canvas = document.getElementById(cfg.id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    kpiCharts[cfg.id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array(12).fill(''),
+        datasets: [{ data: Array(12).fill(0), borderColor: cfg.color, borderWidth: 1.5, pointRadius: 0, fill: true, backgroundColor: `${cfg.color}15`, tension: 0.4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        animation: { duration: 600 }
+      }
+    });
+  });
+}
+
+function updateCharts(pedidos) {
+  if (!pedidos || pedidos.length === 0) return;
+
+  // Group by date for sparklines
+  const byDate = {};
+  pedidos.forEach(p => {
+    const calc = calcularMargem(p);
+    if (!byDate[p.data]) byDate[p.data] = { lucro:0, receita:0, taxas:0, impostos:0, margem:[] };
+    byDate[p.data].lucro += calc.lucro;
+    byDate[p.data].receita += calc.venda;
+    byDate[p.data].taxas += calc.taxaML;
+    byDate[p.data].impostos += calc.imposto;
+    byDate[p.data].margem.push(calc.margem);
+  });
+
+  const dates = Object.keys(byDate).sort().slice(-12);
+  const lucros    = dates.map(d => byDate[d].lucro);
+  const receitas  = dates.map(d => byDate[d].receita);
+  const taxas     = dates.map(d => byDate[d].taxas);
+  const impostos  = dates.map(d => byDate[d].impostos);
+  const margens   = dates.map(d => byDate[d].margem.reduce((a,b)=>a+b,0)/byDate[d].margem.length);
+
+  const updates = [
+    { id: 'chart-lucro',    data: lucros },
+    { id: 'chart-receita',  data: receitas },
+    { id: 'chart-taxas',    data: taxas },
+    { id: 'chart-impostos', data: impostos },
+    { id: 'chart-margem',   data: margens },
+  ];
+
+  updates.forEach(u => {
+    if (kpiCharts[u.id]) {
+      kpiCharts[u.id].data.labels = dates;
+      kpiCharts[u.id].data.datasets[0].data = u.data;
+      kpiCharts[u.id].update('none');
+    }
+  });
+}
+
+// Hook into renderPedidos to update charts
+const _origRenderPedidos = renderPedidos;
+function renderPedidos() {
+  _origRenderPedidos();
+  // Update charts after render
+  setTimeout(() => {
+    const filtered = (window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)})));
+    updateCharts(filtered);
+  }, 50);
+}
+
+// ===== OVERRIDE updateStatus for new CSS classes =====
+function updateStatus(connected) {
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  if (connected) {
+    badge.classList.add('connected');
+    text.textContent = 'Bling conectado';
+  } else {
+    badge.classList.remove('connected');
+    text.textContent = 'Desconectado';
+  }
+}
+
+// ===== SIDEBAR =====
+function setSidebarCanal(lojaId) {
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
+  const el = document.getElementById(map[lojaId] || 'sb-all');
+  if (el) el.classList.add('active');
+  const sel = document.getElementById('filterCanal');
+  if (sel) sel.value = lojaId;
+  currentPage = 1;
+  renderPedidos();
+}
+
+// ===== OVERRIDE showTab =====
+function showTab(name) {
+  document.querySelectorAll('.nav-item').forEach((t,i) => {
+    t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ===== OVERRIDE row render =====
+const _origMapBlingPedido = mapBlingPedido;
+
+// ===== OVERRIDE renderPedidos rows =====
+// Patch the row HTML generation
+const _patchRows = true;
+
+// Init charts on load
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+});
 </script>
 </body>
 </html>
