@@ -714,7 +714,19 @@
           <input type="date" id="filterDateFrom" style="width:140px;" />
           <span style="color:var(--muted);font-size:12px;">até</span>
           <input type="date" id="filterDateTo" style="width:140px;" />
-          <select id="filterMargem" style="width:140px;">
+          <select id="filterCanal" style="width:160px;">
+            <option value="">Todos os canais</option>
+            <option value="203628722">🛒 Mercado Livre</option>
+            <option value="203953121">🛍️ Magalu</option>
+            <option value="205397393">👟 Netshoes</option>
+            <option value="205401394">📦 Amazon</option>
+            <option value="206006851">🎵 TikTok Shop</option>
+            <option value="206029808">🛒 Shopee</option>
+            <option value="205389906">🌐 Site</option>
+            <option value="203654110">🏪 Parque do Povo</option>
+            <option value="203777302">🏬 Prudenshopping</option>
+          </select>
+          <select id="filterMargem" style="width:130px;">
             <option value="">Todas margens</option>
             <option value="good">Boa (>15%)</option>
             <option value="warn">Atenção (5–15%)</option>
@@ -733,6 +745,7 @@
             <tr>
               <th>Pedido</th>
               <th>Data</th>
+              <th>Canal</th>
               <th>Produto</th>
               <th>Venda</th>
               <th>CMV</th>
@@ -746,7 +759,7 @@
           </thead>
           <tbody id="ordersBody">
             <tr>
-              <td colspan="11">
+              <td colspan="12">
                 <div class="empty-state">
                   <div class="empty-icon">🔗</div>
                   <div class="empty-title">Conecte o Bling para começar</div>
@@ -1203,6 +1216,8 @@ function mapBlingPedido(p) {
     cmv: cmvItem > 0 ? cmvItem : null,
     taxaML,
     frete,
+    canal: p.canal || 'Outros',
+    lojaId: p.lojaId || '',
     origem: 'bling',
   };
 }
@@ -1239,6 +1254,7 @@ function gerarDadosDemo(n) {
 // ========== RENDER PEDIDOS ==========
 function renderPedidos() {
   const filterMargem = document.getElementById('filterMargem').value;
+  const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
   const margemMin = +config.margemMin;
   const margemAlvo = +config.margemAlvo;
 
@@ -1247,6 +1263,7 @@ function renderPedidos() {
     return {...p, ...calc};
   });
 
+  if (filterCanal) filtered = filtered.filter(p => p.lojaId === filterCanal);
   if (filterMargem === 'good')  filtered = filtered.filter(p => p.margem >= margemAlvo);
   if (filterMargem === 'warn')  filtered = filtered.filter(p => p.margem >= margemMin && p.margem < margemAlvo);
   if (filterMargem === 'bad')   filtered = filtered.filter(p => p.margem < margemMin);
@@ -1278,7 +1295,7 @@ function renderPedidos() {
   const body = document.getElementById('ordersBody');
 
   if (filtered.length === 0) {
-    body.innerHTML = `<tr><td colspan="11"><div class="empty-state">
+    body.innerHTML = `<tr><td colspan="12"><div class="empty-state">
       <div class="empty-icon">${pedidosData.length === 0 ? '🔗' : '🔍'}</div>
       <div class="empty-title">${pedidosData.length === 0 ? 'Conecte o Bling para começar' : 'Nenhum pedido com esse filtro'}</div>
       <div class="empty-sub">${pedidosData.length === 0 ? 'Vá em Configurações e clique em Sincronizar.' : 'Tente mudar os filtros de data ou margem.'}</div>
@@ -1302,6 +1319,7 @@ function renderPedidos() {
     return `<tr onclick="openModal(${p.numero})">
       <td class="highlight">#${p.numero}${isDemo}</td>
       <td>${p.data}</td>
+      <td><span class="badge badge-blue" style="font-size:10px;">${p.canal || '?'}</span></td>
       <td class="highlight" title="${p.produto}">${p.produto.length > 22 ? p.produto.substring(0,22)+'…' : p.produto}</td>
       <td class="highlight">${formatMoney(p.venda)}</td>
       <td>${formatMoney(p.cmv)}</td>
@@ -1412,6 +1430,9 @@ function closeModalBtn() {
 document.addEventListener('DOMContentLoaded', () => {
   init();
   document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+  if (document.getElementById('filterCanal')) {
+    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+  }
   document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
 });
