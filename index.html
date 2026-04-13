@@ -1007,6 +1007,7 @@ async function loadPedidos() {
     updateStatus(true);
     currentPage = 1;
     renderPedidos();
+    updateChartsFromData();
 
   } catch(e) {
     alert('❌ Erro ao buscar pedidos: ' + e.message + '\n\nVerifique se o servidor no Render está online.');
@@ -1272,10 +1273,10 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
   document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
   if (document.getElementById('filterCanal')) {
-    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
   }
   if (document.getElementById('filterSituacao')) {
-    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
   }
   document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
@@ -1354,15 +1355,12 @@ function updateCharts(pedidos) {
   });
 }
 
-// Hook into renderPedidos to update charts
-const _origRenderPedidos = renderPedidos;
-function renderPedidos() {
-  _origRenderPedidos();
-  // Update charts after render
+// Update charts after renderPedidos - using MutationObserver to avoid recursion
+function updateChartsFromData() {
   setTimeout(() => {
     const filtered = (window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)})));
     updateCharts(filtered);
-  }, 50);
+  }, 100);
 }
 
 // ===== OVERRIDE updateStatus for new CSS classes =====
