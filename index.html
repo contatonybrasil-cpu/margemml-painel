@@ -780,29 +780,46 @@ function applyConfigToForm() {
   document.getElementById('freteComprador').value = config.freteComprador;
 }
 
+function getVal(id, defaultVal = 0) {
+  const el = document.getElementById(id);
+  if (!el) return defaultVal;
+  return el.type === 'number' ? +el.value : el.value;
+}
+
 function readConfigFromForm() {
   return {
-    blingKey: document.getElementById('blingKey').value.trim(),
-    custoEmbalagem: +document.getElementById('custoEmbalagem').value,
-    custoOperacional: +document.getElementById('custoOperacional').value,
-    taxaMLPadrao: +document.getElementById('taxaMLPadrao').value,
-    acrescimoFrete: +document.getElementById('acrescimoFrete').value,
-    aliquotaSN: +document.getElementById('aliquotaSN').value,
-    faixaSN: document.getElementById('faixaSN').value,
-    anexoSN: document.getElementById('anexoSN').value,
-    cmvPadrao: +document.getElementById('cmvPadrao').value,
-    margemMin: +document.getElementById('margemMin').value,
-    margemAlvo: +document.getElementById('margemAlvo').value,
-    margemExc: +document.getElementById('margemExc').value,
-    freteComprador: +document.getElementById('freteComprador').value,
+    blingKey: getVal('blingKey', 'via-proxy'),
+    custoEmbalagem: getVal('custoEmbalagem', 2.50),
+    custoOperacional: getVal('custoOperacional', 1.00),
+    taxaMLPadrao: getVal('taxaMLPadrao', 12),
+    acrescimoFrete: getVal('acrescimoFrete', 0),
+    aliquotaSN: getVal('aliquotaSN', 10),
+    faixaSN: getVal('faixaSN', '720000'),
+    anexoSN: getVal('anexoSN', 'I'),
+    cmvPadrao: getVal('cmvPadrao', 45),
+    margemMin: getVal('margemMin', 5),
+    margemAlvo: getVal('margemAlvo', 15),
+    margemExc: getVal('margemExc', 25),
+    freteComprador: getVal('freteComprador', 0),
   };
 }
 
 function salvarConfig() {
-  config = readConfigFromForm();
-  localStorage.setItem('margemml_config', JSON.stringify(config));
-  updateStatus(!!config.blingKey);
-  showAlert('success', '✅ Configurações salvas com sucesso!');
+  try {
+    config = readConfigFromForm();
+    localStorage.setItem('margemml_config', JSON.stringify(config));
+    updateStatus(!!config.blingKey);
+    // Tenta mostrar alerta, se não existir usa alert nativo
+    try {
+      showAlert('success', 'Configurações salvas!');
+    } catch(e) {
+      alert('✅ Configurações salvas com sucesso!');
+    }
+    // Re-renderiza pedidos com novos valores
+    renderPedidos();
+  } catch(err) {
+    alert('❌ Erro ao salvar: ' + err.message);
+  }
 }
 
 function resetConfig() {
