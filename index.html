@@ -708,21 +708,25 @@ const DEFAULT_TAXAS = [
 
 // ========== INIT ==========
 function init() {
-  config = JSON.parse(localStorage.getItem('margemml_config') || 'null') || {...DEFAULT_CONFIG};
-  taxas = JSON.parse(localStorage.getItem('margemml_taxas') || 'null') || DEFAULT_TAXAS.map(t => ({...t}));
-  pedidosData = JSON.parse(localStorage.getItem('margemml_pedidos') || '[]');
+  // Carrega config salvo ou usa padrão
+  const savedConfig = localStorage.getItem('margemml_config');
+  config = savedConfig ? JSON.parse(savedConfig) : {...DEFAULT_CONFIG};
 
+  taxas = JSON.parse(localStorage.getItem('margemml_taxas') || 'null') || DEFAULT_TAXAS.map(t => ({...t}));
+
+  // Aplica config nos campos ANTES de qualquer render
   applyConfigToForm();
   renderTaxas();
   carregarTaxasCanal();
   renderTaxasCanal();
-  // Sempre limpa pedidos do cache ao iniciar para forçar sincronização
+
+  // Limpa cache de pedidos para forçar nova sincronização
   localStorage.removeItem('margemml_pedidos');
   pedidosData = [];
   renderPedidos();
   updateStatus(!!config.blingKey);
 
-  // Date defaults (últimos 30 dias)
+  // Date defaults (hoje)
   const hoje = new Date();
   const trintaDias = new Date(hoje - 30*24*3600*1000);
   document.getElementById('filterDateTo').value = formatDate(hoje);
@@ -805,21 +809,11 @@ function readConfigFromForm() {
 }
 
 function salvarConfig() {
-  try {
-    config = readConfigFromForm();
-    localStorage.setItem('margemml_config', JSON.stringify(config));
-    updateStatus(!!config.blingKey);
-    // Tenta mostrar alerta, se não existir usa alert nativo
-    try {
-      showAlert('success', 'Configurações salvas!');
-    } catch(e) {
-      alert('✅ Configurações salvas com sucesso!');
-    }
-    // Re-renderiza pedidos com novos valores
-    renderPedidos();
-  } catch(err) {
-    alert('❌ Erro ao salvar: ' + err.message);
-  }
+  config = readConfigFromForm();
+  localStorage.setItem('margemml_config', JSON.stringify(config));
+  updateStatus(!!config.blingKey);
+  renderPedidos();
+  alert('✅ Configurações salvas! Embalagem: R$ ' + config.custoEmbalagem.toFixed(2) + ' | Operacional: R$ ' + config.custoOperacional.toFixed(2) + ' | Imposto: ' + config.aliquotaSN + '%');
 }
 
 function resetConfig() {
