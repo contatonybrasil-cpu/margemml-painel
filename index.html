@@ -1475,7 +1475,7 @@ function exportarPDF() {
       <td>R$ ${(m.outrasDespesas || 0).toFixed(2)}</td>
       <td>R$ ${m.lucro.toFixed(2)}</td>
       <td style="color:${cor};font-weight:bold;">${m.margem.toFixed(1)}%</td>
-    </tr>\`;
+    </tr>`;
   }).join('');
 
   const win = window.open('', '_blank');
