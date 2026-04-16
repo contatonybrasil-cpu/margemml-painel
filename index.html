@@ -949,11 +949,12 @@ function calcularMargem(pedido) {
   const imposto = venda * config.aliquotaSN / 100;
 
   const receitaLiq = venda + freteComprador;
-  const custoTotal = cmv + taxaML + frete + embalagem + operacional + imposto;
+  const outrasDespesas = pedido.outrasDespesas || 0;
+  const custoTotal = cmv + taxaML + frete + embalagem + operacional + imposto + outrasDespesas;
   const lucro = receitaLiq - custoTotal;
   const margem = venda > 0 ? (lucro / venda) * 100 : 0;
 
-  return { venda, cmv, taxaML, frete, embalagem, operacional, imposto, lucro, margem, freteComprador };
+  return { venda, cmv, taxaML, frete, embalagem, operacional, imposto, outrasDespesas, lucro, margem, freteComprador };
 }
 
 // ========== BLING API ==========
@@ -1018,7 +1019,7 @@ async function loadPedidos() {
 
 // Taxas por canal (configuráveis)
 const TAXAS_CANAL = {
-  '203628722': 12,   // Mercado Livre
+  '203628722': 14,   // Mercado Livre
   '203953121': 14,   // Magalu
   '205397393': 16,   // Netshoes
   '205401394': 12,   // Amazon
@@ -1044,10 +1045,19 @@ function mapBlingPedido(p) {
   const cmvItens = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
   const cmv = cmvReal || (cmvItens > 0 ? cmvItens : null);
 
-  // Taxa específica do canal
+  // Usa taxa real do ML se disponível, senão calcula pelo % configurado
   const taxaPct = getTaxaCanal(p.lojaId || '');
-  const taxaML = venda * taxaPct / 100;
-  const frete = +(p.transporte?.frete || 0);
+  const taxaML = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined)
+    ? p.taxaComissaoML
+    : venda * taxaPct / 100;
+
+  // Usa frete real do ML se disponível
+  const frete = (p.custoFreteML !== null && p.custoFreteML !== undefined)
+    ? p.custoFreteML
+    : +(p.transporte?.frete || 0);
+
+  // Outras despesas (ex: acréscimo ML)
+  const outrasDespesas = p.outrasDespesas || 0;
 
   return {
     numero: p.numero || p.id,
@@ -1058,8 +1068,10 @@ function mapBlingPedido(p) {
     taxaML,
     taxaPct,
     frete,
+    outrasDespesas,
     canal: p.canal || 'Outros',
     lojaId: p.lojaId || '',
+    origemTaxa: (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined) ? 'real' : 'estimada',
     origem: 'bling',
   };
 }
@@ -1227,13 +1239,17 @@ function openModal(num) {
       <span class="brow-val neg">– ${formatMoney(m.cmv)}</span>
     </div>
     <div class="brow">
-      <span class="brow-label">🏪 Taxa ${m.canal || "Canal"} (${m.taxaPct || 0}%)</span>
+      <span class="brow-label">🏪 Taxa ${m.canal || "Canal"} ${m.origemTaxa === 'real' ? '✓ real' : '('+( m.taxaPct || 0)+'% est.)'}</span>
       <span class="brow-val neg">– ${formatMoney(m.taxaML)}</span>
     </div>
     <div class="brow">
       <span class="brow-label">🚚 Frete (custo vendedor)</span>
       <span class="brow-val neg">– ${formatMoney(m.frete)}</span>
     </div>
+    ${m.outrasDespesas > 0 ? `<div class="brow">
+      <span class="brow-label">➕ Outras despesas</span>
+      <span class="brow-val neg">– ${formatMoney(m.outrasDespesas)}</span>
+    </div>` : ''}
     <div class="brow">
       <span class="brow-label">📦 Embalagem</span>
       <span class="brow-val neg">– ${formatMoney(m.embalagem)}</span>
