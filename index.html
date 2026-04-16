@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NY Multimarcas — Gestão</title>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https:
+<script src="https:
 <style>
 :root {
   --bg: #080b12;
@@ -586,7 +586,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
         <div style="display:flex;gap:10px;align-items:flex-end;">
           <div class="field" style="flex:1;margin-bottom:0;">
             <label>Servidor proxy</label>
-            <input type="text" id="blingKey" value="https://margemml-proxy.onrender.com" readonly style="color:var(--green);cursor:default;" />
+            <input type="text" id="blingKey" value="https:
           </div>
           <button class="btn btn-cyan" onclick="testarConexao()">Testar</button>
           <button class="btn btn-ghost" onclick="salvarConfig()">Salvar</button>
@@ -665,7 +665,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 </div>
 
 <script>
-// ========== STATE ==========
+
 let config = {};
 let taxas = [];
 let pedidosData = [];
@@ -708,27 +708,23 @@ const DEFAULT_TAXAS = [
   { categoria: 'Outros', classico: 12, premium: 16, frete: 3 },
 ];
 
-// ========== INIT ==========
 function init() {
-  // Carrega config salvo ou usa padrão
+  
   const savedConfig = localStorage.getItem('margemml_config');
   config = savedConfig ? JSON.parse(savedConfig) : {...DEFAULT_CONFIG};
 
   taxas = JSON.parse(localStorage.getItem('margemml_taxas') || 'null') || DEFAULT_TAXAS.map(t => ({...t}));
 
-  // Aplica config nos campos ANTES de qualquer render
   applyConfigToForm();
   renderTaxas();
   carregarTaxasCanal();
   renderTaxasCanal();
 
-  // Limpa cache de pedidos para forçar nova sincronização
   localStorage.removeItem('margemml_pedidos');
   pedidosData = [];
   renderPedidos();
   updateStatus(!!config.blingKey);
 
-  // Date defaults (hoje)
   const hoje = new Date();
   const trintaDias = new Date(hoje - 30*24*3600*1000);
   document.getElementById('filterDateTo').value = formatDate(hoje);
@@ -747,7 +743,6 @@ function formatPct(v) {
   return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%';
 }
 
-// ========== TABS ==========
 function showTab(name) {
   document.querySelectorAll('.nav-item').forEach((t,i) => {
     t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
@@ -757,19 +752,18 @@ function showTab(name) {
 }
 
 function setSidebarCanal(lojaId) {
-  // Atualiza sidebar
+  
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
   const el = document.getElementById(map[lojaId] || 'sb-all');
   if (el) el.classList.add('active');
-  // Atualiza filtro
+  
   const sel = document.getElementById('filterCanal');
   if (sel) sel.value = lojaId;
   currentPage = 1;
   renderPedidos();
 }
 
-// ========== CONFIG ==========
 function applyConfigToForm() {
   document.getElementById('blingKey').value = config.blingKey || '';
   document.getElementById('custoEmbalagem').value = config.custoEmbalagem;
@@ -835,7 +829,6 @@ function showAlert(type, msg) {
   setTimeout(() => document.getElementById('alert'+cap).classList.remove('show'), 4000);
 }
 
-// ========== STATUS ==========
 function updateStatus(connected) {
   const badge = document.getElementById('statusBadge');
   const text = document.getElementById('statusText');
@@ -848,7 +841,6 @@ function updateStatus(connected) {
   }
 }
 
-// ========== TAXAS POR CANAL ==========
 const CANAIS_CONFIG = [
   { id: '203628722', nome: '🛒 Mercado Livre', tipo: 'Marketplace' },
   { id: '203953121', nome: '🛍️ Magalu',        tipo: 'Marketplace' },
@@ -883,7 +875,7 @@ function salvarTaxasCanal() {
     if (el) saved[c.id] = +el.value;
   });
   localStorage.setItem('margemml_taxas_canal', JSON.stringify(saved));
-  // Atualiza TAXAS_CANAL em memória
+  
   Object.assign(TAXAS_CANAL, saved);
   alert('✅ Taxas salvas! As margens serão recalculadas na próxima sincronização.');
 }
@@ -898,7 +890,6 @@ function carregarTaxasCanal() {
   Object.assign(TAXAS_CANAL, saved);
 }
 
-// ========== TAXAS ==========
 function renderTaxas() {
   const body = document.getElementById('taxasBody');
   if (!body) return;
@@ -923,10 +914,8 @@ function resetTaxas() {
   localStorage.removeItem('margemml_taxas');
 }
 
-// ========== PROXY URL ==========
-const PROXY_URL = 'https://margemml-proxy.onrender.com';
+const PROXY_URL = 'https:
 
-// ========== TESTAR CONEXÃO ==========
 async function testarConexao() {
   showAlert('warn', '🔄 Testando conexão com o servidor...');
 
@@ -948,14 +937,13 @@ async function testarConexao() {
   }
 }
 
-// ========== CALCULAR MARGEM ==========
 function calcularMargem(pedido) {
   const venda = pedido.venda || 0;
-  // Usa CMV real se disponível (não usa || porque 0 seria falso)
+  
   const cmv = (pedido.cmv !== null && pedido.cmv !== undefined) ? pedido.cmv : (venda * config.cmvPadrao / 100);
-  // Usa taxa do canal (taxaML pode ser 0 para lojas físicas — não usar ||)
+  
   const taxaML = (pedido.taxaML !== null && pedido.taxaML !== undefined) ? pedido.taxaML : (venda * config.taxaMLPadrao / 100);
-  const frete = pedido.frete || 0; // frete que o vendedor paga
+  const frete = pedido.frete || 0; 
   const freteComprador = config.freteComprador || 0;
   const embalagem = config.custoEmbalagem;
   const operacional = config.custoOperacional;
@@ -970,18 +958,15 @@ function calcularMargem(pedido) {
   return { venda, cmv, taxaML, frete, embalagem, operacional, imposto, outrasDespesas, lucro, margem, freteComprador };
 }
 
-// ========== BLING API ==========
 async function loadPedidos() {
   const spinner = document.getElementById('loadSpinner');
   spinner.style.display = 'inline';
 
-  // Lê filtros ANTES do loop
   const dateFrom = document.getElementById('filterDateFrom').value;
   const dateTo = document.getElementById('filterDateTo').value;
   const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
   const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
 
-  // Limpa cache
   localStorage.removeItem('margemml_pedidos');
   pedidosData = [];
 
@@ -1013,7 +998,6 @@ async function loadPedidos() {
       pagina++;
     }
 
-    // Limpa cache antes de salvar novos dados
     localStorage.removeItem('margemml_pedidos');
     pedidosData = todos.map(p => mapBlingPedido(p));
     localStorage.setItem('margemml_pedidos', JSON.stringify(pedidosData));
@@ -1030,17 +1014,16 @@ async function loadPedidos() {
   }
 }
 
-// Taxas por canal (configuráveis)
 const TAXAS_CANAL = {
-  '203628722': 14,   // Mercado Livre
-  '203953121': 14,   // Magalu
-  '205397393': 16,   // Netshoes
-  '205401394': 12,   // Amazon
-  '206006851': 6,    // TikTok Shop
-  '206029808': 14,   // Shopee
-  '205389906': 3,    // Site (gateway)
-  '203654110': 0,    // Parque do Povo
-  '203777302': 0,    // Prudenshopping
+  '203628722': 14,   
+  '203953121': 14,   
+  '205397393': 16,   
+  '205401394': 12,   
+  '206006851': 6,    
+  '206029808': 14,   
+  '205389906': 3,    
+  '203654110': 0,    
+  '203777302': 0,    
 };
 
 function getTaxaCanal(lojaId) {
@@ -1053,23 +1036,19 @@ function mapBlingPedido(p) {
   const nomeItem = p.nomeProduto || (items.length > 0 ? (items[0].descricao || 'Produto') : 'Produto');
   const venda = +(p.totalProdutos || p.total || 0);
 
-  // Usa CMV real se disponível, senão calcula pelo % padrão
   const cmvReal = p.cmvReal || null;
   const cmvItens = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
   const cmv = cmvReal || (cmvItens > 0 ? cmvItens : null);
 
-  // Usa taxa real do ML se disponível, senão calcula pelo % configurado
   const taxaPct = getTaxaCanal(p.lojaId || '');
   const taxaML = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined)
     ? p.taxaComissaoML
     : venda * taxaPct / 100;
 
-  // Usa frete real do ML se disponível
   const frete = (p.custoFreteML !== null && p.custoFreteML !== undefined)
     ? p.custoFreteML
     : +(p.transporte?.frete || 0);
 
-  // Outras despesas (ex: acréscimo ML)
   const outrasDespesas = p.outrasDespesas || 0;
 
   return {
@@ -1089,7 +1068,6 @@ function mapBlingPedido(p) {
   };
 }
 
-// ========== DEMO DATA ==========
 function gerarDadosDemo(n) {
   const produtos = [
     'Fone Bluetooth Pro X200', 'Carregador Rápido 65W', 'Suporte Notebook Ajust.',
@@ -1118,7 +1096,6 @@ function gerarDadosDemo(n) {
   });
 }
 
-// ========== RENDER PEDIDOS ==========
 function renderPedidos() {
   const filterMargem = document.getElementById('filterMargem').value;
   const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
@@ -1135,7 +1112,6 @@ function renderPedidos() {
   if (filterMargem === 'warn')  filtered = filtered.filter(p => p.margem >= margemMin && p.margem < margemAlvo);
   if (filterMargem === 'bad')   filtered = filtered.filter(p => p.margem < margemMin);
 
-  // KPIs
   const totalReceita = filtered.reduce((a,p) => a + p.venda, 0);
   const totalLucro   = filtered.reduce((a,p) => a + p.lucro, 0);
   const totalTaxas   = filtered.reduce((a,p) => a + p.taxaML, 0);
@@ -1153,7 +1129,6 @@ function renderPedidos() {
 
   document.getElementById('totalBadge').textContent = filtered.length + ' pedidos';
 
-  // Paginar
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (currentPage > totalPages) currentPage = 1;
   const start = (currentPage-1)*PAGE_SIZE;
@@ -1204,7 +1179,6 @@ function renderPedidos() {
     </tr>`;
   }).join('');
 
-  // Pagination
   const pRow = document.getElementById('paginationRow');
   pRow.style.display = 'flex';
   document.getElementById('paginationInfo').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, filtered.length)} de ${filtered.length}`;
@@ -1220,7 +1194,6 @@ function renderPedidos() {
   }
   btns.innerHTML += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
 
-  // store filtered for modal
   window._filteredPedidos = filtered;
 }
 
@@ -1229,7 +1202,6 @@ function changePage(p) {
   renderPedidos();
 }
 
-// ========== MODAL ==========
 function openModal(num) {
   const pedido = (window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}))).find(p => p.numero === num);
   if (!pedido) return;
@@ -1297,7 +1269,6 @@ function closeModalBtn() {
   document.getElementById('modalOverlay').classList.remove('show');
 }
 
-// ========== FILTER LIVE ==========
 document.addEventListener('DOMContentLoaded', () => {
   init();
   document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
@@ -1311,9 +1282,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
 });
 
-
-
-// ===== CHARTS =====
 let kpiCharts = {};
 
 function initCharts() {
@@ -1348,7 +1316,6 @@ function initCharts() {
 function updateCharts(pedidos) {
   if (!pedidos || pedidos.length === 0) return;
 
-  // Group by date for sparklines
   const byDate = {};
   pedidos.forEach(p => {
     const calc = calcularMargem(p);
@@ -1384,7 +1351,6 @@ function updateCharts(pedidos) {
   });
 }
 
-// Update charts after renderPedidos - using MutationObserver to avoid recursion
 function updateChartsFromData() {
   setTimeout(() => {
     const filtered = (window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)})));
@@ -1392,7 +1358,6 @@ function updateChartsFromData() {
   }, 100);
 }
 
-// ===== OVERRIDE updateStatus for new CSS classes =====
 function updateStatus(connected) {
   const badge = document.getElementById('statusBadge');
   const text = document.getElementById('statusText');
@@ -1405,7 +1370,6 @@ function updateStatus(connected) {
   }
 }
 
-// ===== SIDEBAR =====
 function setSidebarCanal(lojaId) {
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
@@ -1417,7 +1381,6 @@ function setSidebarCanal(lojaId) {
   renderPedidos();
 }
 
-// ===== OVERRIDE showTab =====
 function showTab(name) {
   document.querySelectorAll('.nav-item').forEach((t,i) => {
     t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
@@ -1426,19 +1389,14 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ===== OVERRIDE row render =====
 const _origMapBlingPedido = mapBlingPedido;
 
-// ===== OVERRIDE renderPedidos rows =====
-// Patch the row HTML generation
 const _patchRows = true;
 
-// Init charts on load
 document.addEventListener('DOMContentLoaded', () => {
   initCharts();
 });
 
-// ===== EXPORTAR EXCEL =====
 function exportarExcel() {
   const filtered = window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}));
   if (!filtered || filtered.length === 0) {
@@ -1472,7 +1430,6 @@ function exportarExcel() {
     ].join(';') + '\n';
   });
 
-  // BOM para Excel reconhecer UTF-8
   const bom = '\uFEFF';
   const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -1483,7 +1440,6 @@ function exportarExcel() {
   URL.revokeObjectURL(url);
 }
 
-// ===== EXPORTAR PDF =====
 function exportarPDF() {
   const filtered = window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}));
   if (!filtered || filtered.length === 0) {
