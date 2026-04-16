@@ -1512,10 +1512,14 @@ function exportarPDF() {
       <td>R$ ${m.venda.toFixed(2)}</td>
       <td>R$ ${m.cmv.toFixed(2)}</td>
       <td>R$ ${m.taxaML.toFixed(2)}</td>
+      <td>R$ ${m.frete.toFixed(2)}</td>
+      <td>R$ ${m.embalagem.toFixed(2)}</td>
+      <td>R$ ${m.operacional.toFixed(2)}</td>
       <td>R$ ${m.imposto.toFixed(2)}</td>
+      <td>R$ ${(m.outrasDespesas || 0).toFixed(2)}</td>
       <td>R$ ${m.lucro.toFixed(2)}</td>
       <td style="color:${cor};font-weight:bold;">${m.margem.toFixed(1)}%</td>
-    </tr>`;
+    </tr>\`;
   }).join('');
 
   const html = `<!DOCTYPE html>
@@ -1524,7 +1528,7 @@ function exportarPDF() {
 <meta charset="UTF-8">
 <title>Relatório de Pedidos — NY Multimarcas</title>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 20px; }
+  body { font-family: Arial, sans-serif; font-size: 9px; color: #222; margin: 15px; }
   h1 { font-size: 18px; margin-bottom: 4px; }
   .sub { color: #666; margin-bottom: 16px; font-size: 12px; }
   .kpis { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -1553,7 +1557,7 @@ function exportarPDF() {
   <thead>
     <tr>
       <th>Pedido</th><th>Data</th><th>Canal</th><th>Produto</th>
-      <th>Venda</th><th>CMV</th><th>Taxa</th><th>Imposto</th><th>Lucro</th><th>Margem</th>
+      <th>Venda</th><th>CMV</th><th>Taxa</th><th>Frete</th><th>Embal.</th><th>Operat.</th><th>Imposto</th><th>Outras</th><th>Lucro</th><th>Margem</th>
     </tr>
   </thead>
   <tbody>${rows}</tbody>
