@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -1522,54 +1522,38 @@ function exportarPDF() {
     </tr>\`;
   }).join('');
 
-  const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Relatório de Pedidos — NY Multimarcas</title>
-<style>
-  body { font-family: Arial, sans-serif; font-size: 9px; color: #222; margin: 15px; }
-  h1 { font-size: 18px; margin-bottom: 4px; }
-  .sub { color: #666; margin-bottom: 16px; font-size: 12px; }
-  .kpis { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-  .kpi { background: #f5f5f5; border-radius: 6px; padding: 12px 16px; min-width: 120px; }
-  .kpi-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-  .kpi-value { font-size: 18px; font-weight: bold; margin-top: 4px; }
-  table { width: 100%; border-collapse: collapse; }
-  th { background: #111827; color: #fff; padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
-  td { padding: 7px 10px; border-bottom: 1px solid #eee; }
-  tr:nth-child(even) td { background: #fafafa; }
-  .footer { margin-top: 20px; color: #999; font-size: 10px; text-align: center; }
-  @media print { button { display: none; } }
-</style>
-</head>
-<body>
-<h1>NY Multimarcas — Relatório de Pedidos</h1>
-<div class="sub">Canal: ${canal} | Período: ${de} a ${ate} | ${filtered.length} pedidos</div>
-<div class="kpis">
-  <div class="kpi"><div class="kpi-label">Receita Bruta</div><div class="kpi-value" style="color:#2563eb;">R$ ${totalReceita.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
-  <div class="kpi"><div class="kpi-label">Lucro Líquido</div><div class="kpi-value" style="color:#16a34a;">R$ ${totalLucro.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
-  <div class="kpi"><div class="kpi-label">Taxas Canal</div><div class="kpi-value" style="color:#d97706;">R$ ${totalTaxas.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
-  <div class="kpi"><div class="kpi-label">Impostos SN</div><div class="kpi-value" style="color:#7c3aed;">R$ ${totalImposto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
-  <div class="kpi"><div class="kpi-label">Margem Média</div><div class="kpi-value" style="color:#0891b2;">${margemMedia.toFixed(1)}%</div></div>
-</div>
-<table>
-  <thead>
-    <tr>
-      <th>Pedido</th><th>Data</th><th>Canal</th><th>Produto</th>
-      <th>Venda</th><th>CMV</th><th>Taxa</th><th>Frete</th><th>Embal.</th><th>Operat.</th><th>Imposto</th><th>Outras</th><th>Lucro</th><th>Margem</th>
-    </tr>
-  </thead>
-  <tbody>${rows}</tbody>
-</table>
-<div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')} — NY Multimarcas Gestão</div>
-<scr' + 'ipt>window.onload = () => window.print();</scr' + 'ipt>
-</body>
-</html>`;
-
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  const win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatorio NY Multimarcas</title><style>');
+  win.document.write('body{font-family:Arial,sans-serif;font-size:9px;color:#222;margin:15px;}');
+  win.document.write('h1{font-size:18px;margin-bottom:4px;}.sub{color:#666;margin-bottom:16px;font-size:12px;}');
+  win.document.write('.kpis{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;}');
+  win.document.write('.kpi{background:#f5f5f5;border-radius:6px;padding:12px 16px;min-width:120px;}');
+  win.document.write('.kpi-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;}');
+  win.document.write('.kpi-value{font-size:18px;font-weight:bold;margin-top:4px;}');
+  win.document.write('table{width:100%;border-collapse:collapse;}');
+  win.document.write('th{background:#111827;color:#fff;padding:8px 10px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;}');
+  win.document.write('td{padding:7px 10px;border-bottom:1px solid #eee;}');
+  win.document.write('tr:nth-child(even) td{background:#fafafa;}');
+  win.document.write('.footer{margin-top:20px;color:#999;font-size:10px;text-align:center;}');
+  win.document.write('@media print{button{display:none;}}');
+  win.document.write('</style></head><body>');
+  win.document.write('<h1>NY Multimarcas — Relatorio de Pedidos</h1>');
+  win.document.write('<div class="sub">Canal: ' + canal + ' | Periodo: ' + de + ' a ' + ate + ' | ' + filtered.length + ' pedidos</div>');
+  win.document.write('<div class="kpis">');
+  win.document.write('<div class="kpi"><div class="kpi-label">Receita Bruta</div><div class="kpi-value" style="color:#2563eb;">R$ ' + totalReceita.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">Lucro Liquido</div><div class="kpi-value" style="color:#16a34a;">R$ ' + totalLucro.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">Taxas Canal</div><div class="kpi-value" style="color:#d97706;">R$ ' + totalTaxas.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">Impostos SN</div><div class="kpi-value" style="color:#7c3aed;">R$ ' + totalImposto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">Margem Media</div><div class="kpi-value" style="color:#0891b2;">' + margemMedia.toFixed(1) + '%</div></div>');
+  win.document.write('</div>');
+  win.document.write('<table><thead><tr>');
+  win.document.write('<th>Pedido</th><th>Data</th><th>Canal</th><th>Produto</th><th>Venda</th><th>CMV</th><th>Taxa</th><th>Frete</th><th>Embal.</th><th>Operat.</th><th>Imposto</th><th>Outras</th><th>Lucro</th><th>Margem</th>');
+  win.document.write('</tr></thead><tbody>');
+  win.document.write(rows);
+  win.document.write('</tbody></table>');
+  win.document.write('<div class="footer">Gerado em ' + new Date().toLocaleString('pt-BR') + ' — NY Multimarcas Gestao</div>');
+  win.document.close();
+  win.print();
 }
 </script>
 </body>
