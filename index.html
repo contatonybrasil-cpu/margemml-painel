@@ -544,6 +544,8 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
             <span id="loadSpinner" style="display:none;"><span class="spinner"></span></span>
             Sincronizar
           </button>
+          <button class="btn btn-ghost" onclick="exportarExcel()" title="Exportar para Excel">📊 Excel</button>
+          <button class="btn btn-ghost" onclick="exportarPDF()" title="Exportar para PDF">📄 PDF</button>
         </div>
       </div>
 
@@ -1435,6 +1437,135 @@ const _patchRows = true;
 document.addEventListener('DOMContentLoaded', () => {
   initCharts();
 });
+
+// ===== EXPORTAR EXCEL =====
+function exportarExcel() {
+  const filtered = window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}));
+  if (!filtered || filtered.length === 0) {
+    alert('Nenhum dado para exportar. Sincronize primeiro!');
+    return;
+  }
+
+  const canal = document.getElementById('filterCanal')?.options[document.getElementById('filterCanal')?.selectedIndex]?.text || 'Todos';
+  const de = document.getElementById('filterDateFrom')?.value || '';
+  const ate = document.getElementById('filterDateTo')?.value || '';
+
+  let csv = 'Pedido,Data,Canal,Produto,Venda,CMV,Taxa Canal,Frete,Embalagem,Operacional,Imposto,Lucro,Margem %\n';
+
+  filtered.forEach(p => {
+    const m = calcularMargem(p);
+    csv += [
+      '#' + p.numero,
+      p.data,
+      p.canal || '',
+      '"' + (p.produto || '').replace(/"/g, "'") + '"',
+      m.venda.toFixed(2).replace('.', ','),
+      m.cmv.toFixed(2).replace('.', ','),
+      m.taxaML.toFixed(2).replace('.', ','),
+      m.frete.toFixed(2).replace('.', ','),
+      m.embalagem.toFixed(2).replace('.', ','),
+      m.operacional.toFixed(2).replace('.', ','),
+      m.imposto.toFixed(2).replace('.', ','),
+      m.lucro.toFixed(2).replace('.', ','),
+      m.margem.toFixed(1).replace('.', ',') + '%',
+    ].join(';') + '\n';
+  });
+
+  // BOM para Excel reconhecer UTF-8
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pedidos_${canal}_${de}_${ate}.csv`.replace(/\s/g, '_');
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== EXPORTAR PDF =====
+function exportarPDF() {
+  const filtered = window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}));
+  if (!filtered || filtered.length === 0) {
+    alert('Nenhum dado para exportar. Sincronize primeiro!');
+    return;
+  }
+
+  const canal = document.getElementById('filterCanal')?.options[document.getElementById('filterCanal')?.selectedIndex]?.text || 'Todos os canais';
+  const de = document.getElementById('filterDateFrom')?.value || '';
+  const ate = document.getElementById('filterDateTo')?.value || '';
+
+  const totalReceita = filtered.reduce((a,p) => a + calcularMargem(p).venda, 0);
+  const totalLucro   = filtered.reduce((a,p) => a + calcularMargem(p).lucro, 0);
+  const totalTaxas   = filtered.reduce((a,p) => a + calcularMargem(p).taxaML, 0);
+  const totalImposto = filtered.reduce((a,p) => a + calcularMargem(p).imposto, 0);
+  const margemMedia  = totalReceita > 0 ? (totalLucro / totalReceita * 100) : 0;
+
+  const rows = filtered.map(p => {
+    const m = calcularMargem(p);
+    const cor = m.margem < config.margemMin ? '#e05555' : m.margem >= config.margemAlvo ? '#00e5a0' : '#f5a623';
+    return `<tr>
+      <td>#${p.numero}</td>
+      <td>${p.data}</td>
+      <td>${p.canal || ''}</td>
+      <td>${(p.produto || '').substring(0, 30)}</td>
+      <td>R$ ${m.venda.toFixed(2)}</td>
+      <td>R$ ${m.cmv.toFixed(2)}</td>
+      <td>R$ ${m.taxaML.toFixed(2)}</td>
+      <td>R$ ${m.imposto.toFixed(2)}</td>
+      <td>R$ ${m.lucro.toFixed(2)}</td>
+      <td style="color:${cor};font-weight:bold;">${m.margem.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório de Pedidos — NY Multimarcas</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 20px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .sub { color: #666; margin-bottom: 16px; font-size: 12px; }
+  .kpis { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi { background: #f5f5f5; border-radius: 6px; padding: 12px 16px; min-width: 120px; }
+  .kpi-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .kpi-value { font-size: 18px; font-weight: bold; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #111827; color: #fff; padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .footer { margin-top: 20px; color: #999; font-size: 10px; text-align: center; }
+  @media print { button { display: none; } }
+</style>
+</head>
+<body>
+<h1>NY Multimarcas — Relatório de Pedidos</h1>
+<div class="sub">Canal: ${canal} | Período: ${de} a ${ate} | ${filtered.length} pedidos</div>
+<div class="kpis">
+  <div class="kpi"><div class="kpi-label">Receita Bruta</div><div class="kpi-value" style="color:#2563eb;">R$ ${totalReceita.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
+  <div class="kpi"><div class="kpi-label">Lucro Líquido</div><div class="kpi-value" style="color:#16a34a;">R$ ${totalLucro.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
+  <div class="kpi"><div class="kpi-label">Taxas Canal</div><div class="kpi-value" style="color:#d97706;">R$ ${totalTaxas.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
+  <div class="kpi"><div class="kpi-label">Impostos SN</div><div class="kpi-value" style="color:#7c3aed;">R$ ${totalImposto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>
+  <div class="kpi"><div class="kpi-label">Margem Média</div><div class="kpi-value" style="color:#0891b2;">${margemMedia.toFixed(1)}%</div></div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>Pedido</th><th>Data</th><th>Canal</th><th>Produto</th>
+      <th>Venda</th><th>CMV</th><th>Taxa</th><th>Imposto</th><th>Lucro</th><th>Margem</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')} — NY Multimarcas Gestão</div>
+<script>window.onload = () => window.print();<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
 </script>
 </body>
 </html>
