@@ -1450,7 +1450,7 @@ function exportarExcel() {
   const de = document.getElementById('filterDateFrom')?.value || '';
   const ate = document.getElementById('filterDateTo')?.value || '';
 
-  let csv = 'Pedido,Data,Canal,Produto,Venda,CMV,Taxa Canal,Frete,Embalagem,Operacional,Imposto,Lucro,Margem %\n';
+  let csv = 'Pedido;Data;Canal;Produto;Venda;CMV;Taxa Canal;Frete;Embalagem;Custo Operacional;Imposto SN;Outras Despesas;Lucro Líquido;Margem %\n';
 
   filtered.forEach(p => {
     const m = calcularMargem(p);
@@ -1466,6 +1466,7 @@ function exportarExcel() {
       m.embalagem.toFixed(2).replace('.', ','),
       m.operacional.toFixed(2).replace('.', ','),
       m.imposto.toFixed(2).replace('.', ','),
+      (m.outrasDespesas || 0).toFixed(2).replace('.', ','),
       m.lucro.toFixed(2).replace('.', ','),
       m.margem.toFixed(1).replace('.', ',') + '%',
     ].join(';') + '\n';
