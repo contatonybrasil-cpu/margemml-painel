@@ -927,12 +927,12 @@ async function testarConexao() {
       localStorage.setItem('margemml_config', JSON.stringify(config));
       updateStatus(true);
     } else if (resp.status === 401) {
-      showAlert('error', '❌ Token inválido no servidor. Verifique a variável BLING_TOKEN no Render.');
+      showAlert('error', '❌ Token inválido no servidor. Verifique a variável BLING_TOKEN no Servidor.');
     } else {
-      showAlert('error', `❌ Erro ${resp.status}. Verifique o servidor no Render.`);
+      showAlert('error', `❌ Erro ${resp.status}. Verifique o servidor no Servidor.`);
     }
   } catch(e) {
-    showAlert('error', '❌ Servidor proxy offline. Verifique se o Render está rodando.');
+    showAlert('error', '❌ Servidor proxy offline. Verifique se o Servidor está rodando.');
   }
 }
 
