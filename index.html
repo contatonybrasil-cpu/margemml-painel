@@ -1312,7 +1312,10 @@ function exportarPDF() {
   const totalLucro   = filtered.reduce((a,p) => a + calcularMargem(p).lucro, 0);
   const totalTaxas   = filtered.reduce((a,p) => a + calcularMargem(p).taxaML, 0);
   const totalImposto = filtered.reduce((a,p) => a + calcularMargem(p).imposto, 0);
+  const totalCMV     = filtered.reduce((a,p) => a + (calcularMargem(p).cmv || 0), 0);
+  const ticketMedio  = filtered.length > 0 ? totalReceita / filtered.length : 0;
   const margemMedia  = totalReceita > 0 ? (totalLucro / totalReceita * 100) : 0;
+  const pedidosSemCusto = filtered.filter(p => calcularMargem(p).semCusto).length;
 
   const rows = filtered.map(p => {
     const m = calcularMargem(p);
@@ -1352,11 +1355,14 @@ function exportarPDF() {
   win.document.write('</style></head><body>');
   win.document.write('<h1>NY Multimarcas — Relatorio de Pedidos</h1>');
   win.document.write('<div class="sub">Canal: ' + canal + ' | Periodo: ' + de + ' a ' + ate + ' | ' + filtered.length + ' pedidos</div>');
+  const alertaCusto = pedidosSemCusto > 0 ? '<div style="font-size:9px;color:#dc2626;margin-top:2px;">⚠ ' + pedidosSemCusto + ' sem custo</div>' : '';
   win.document.write('<div class="kpis">');
   win.document.write('<div class="kpi"><div class="kpi-label">Receita Bruta</div><div class="kpi-value" style="color:#2563eb;">R$ ' + totalReceita.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
   win.document.write('<div class="kpi"><div class="kpi-label">Lucro Liquido</div><div class="kpi-value" style="color:#16a34a;">R$ ' + totalLucro.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">CMV Total</div><div class="kpi-value" style="color:#dc2626;">R$ ' + totalCMV.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' + alertaCusto + '</div>');
   win.document.write('<div class="kpi"><div class="kpi-label">Taxas Canal</div><div class="kpi-value" style="color:#d97706;">R$ ' + totalTaxas.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
   win.document.write('<div class="kpi"><div class="kpi-label">Impostos SN</div><div class="kpi-value" style="color:#7c3aed;">R$ ' + totalImposto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
+  win.document.write('<div class="kpi"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" style="color:#0ea5e9;">R$ ' + ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div></div>');
   win.document.write('<div class="kpi"><div class="kpi-label">Margem Media</div><div class="kpi-value" style="color:#0891b2;">' + margemMedia.toFixed(1) + '%</div></div>');
   win.document.write('</div>');
   win.document.write('<table><thead><tr>');
