@@ -873,7 +873,7 @@ function calcularMargem(pedido) {
   const imposto = venda * config.aliquotaSN / 100;
 
   const receitaLiq = venda + freteComprador;
-  const outrasDespesas = pedido.outrasDespesas || 0;
+  const outrasDespesas = 0; // Desativado: campo do Bling mistura custos do vendedor com valores do comprador
   const custoTotal = cmv + taxaML + frete + embalagem + operacional + imposto + outrasDespesas;
   const lucro = receitaLiq - custoTotal;
   const margem = venda > 0 ? (lucro / venda) * 100 : 0;
