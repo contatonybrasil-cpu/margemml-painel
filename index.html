@@ -34,7 +34,6 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; overflow-x:hidden; }
 
-/* Animated bg */
 body::before {
   content:'';
   position:fixed; inset:0;
@@ -53,7 +52,6 @@ body::before {
 
 .app { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100vh; }
 
-/* ===== HEADER ===== */
 header {
   display:flex; align-items:center; justify-content:space-between;
   padding:0 28px; height:60px;
@@ -94,10 +92,8 @@ header {
 .pulse { width:6px; height:6px; border-radius:50%; background:currentColor; animation:blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-/* ===== LAYOUT ===== */
 .layout { display:flex; flex:1; }
 
-/* ===== SIDEBAR ===== */
 .sidebar {
   width:210px; min-width:210px;
   border-right:1px solid var(--border);
@@ -125,13 +121,11 @@ header {
 .sidebar-item.active .dot { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
 .sidebar-item:hover .dot { background:var(--text2); }
 
-/* ===== MAIN ===== */
 .main { flex:1; overflow:hidden; }
 .section { display:none; padding:24px 28px; animation:fadeUp 0.25s ease; }
 .section.active { display:block; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-/* ===== KPI GRID ===== */
 .kpi-grid {
   display:grid;
   grid-template-columns:repeat(5,1fr);
@@ -154,11 +148,6 @@ header {
 .kpi-glow {
   position:absolute; top:0; left:0; right:0; height:1px;
   opacity:0.8;
-}
-
-.kpi-bg-chart {
-  position:absolute; bottom:0; right:0; left:0;
-  height:50px; opacity:0.15;
 }
 
 .kpi-label {
@@ -184,7 +173,6 @@ header {
   position:relative;
 }
 
-/* ===== TOOLBAR ===== */
 .toolbar {
   display:flex; align-items:center;
   justify-content:space-between;
@@ -207,7 +195,6 @@ header {
 
 .toolbar-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-/* ===== INPUTS ===== */
 input, select {
   background:var(--surface);
   border:1px solid var(--border2);
@@ -220,7 +207,6 @@ input, select {
 input:focus, select:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,212,255,0.1); }
 select option { background:var(--surface); }
 
-/* ===== BUTTONS ===== */
 .btn {
   padding:8px 18px; border-radius:6px;
   font-family:var(--font); font-weight:700;
@@ -241,7 +227,6 @@ select option { background:var(--surface); }
 }
 .btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
 
-/* ===== TABLE ===== */
 .table-wrap {
   border:1px solid var(--border);
   border-radius:var(--r); overflow:hidden;
@@ -276,23 +261,17 @@ select option { background:var(--surface); }
 .data-table td.warn { color:var(--orange); }
 .data-table td.gold { color:var(--gold); }
 
-/* Channel badges */
 .ch {
   display:inline-flex; align-items:center;
   padding:2px 8px; border-radius:3px;
   font-size:9px; letter-spacing:0.5px;
   font-family:var(--mono); border:1px solid; font-weight:500;
 }
-.ch-ml   { border-color:rgba(255,209,102,0.3); color:var(--gold); background:rgba(255,209,102,0.06); }
-.ch-phy  { border-color:rgba(0,212,255,0.3); color:var(--cyan); background:rgba(0,212,255,0.06); }
-.ch-mkt  { border-color:rgba(0,229,160,0.3); color:var(--green); background:rgba(0,229,160,0.06); }
 
-/* Margin bar */
 .mbar { display:flex; align-items:center; gap:7px; }
 .mtrack { width:48px; height:3px; background:var(--border2); border-radius:2px; overflow:hidden; }
 .mfill { height:100%; border-radius:2px; transition:width 0.4s ease; }
 
-/* Status chips */
 .chip {
   display:inline-flex; align-items:center;
   padding:2px 8px; border-radius:3px;
@@ -303,7 +282,6 @@ select option { background:var(--surface); }
 .chip-warn { border-color:rgba(255,124,42,0.3); color:var(--orange); background:rgba(255,124,42,0.06); }
 .chip-bad  { border-color:rgba(255,61,138,0.3); color:var(--pink); background:rgba(255,61,138,0.06); }
 
-/* ===== PAGINATION ===== */
 .pagination {
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 16px; border-top:1px solid var(--border);
@@ -320,13 +298,11 @@ select option { background:var(--surface); }
 .page-btn.active { background:linear-gradient(135deg,var(--cyan),var(--purple)); color:var(--bg); border-color:transparent; }
 .page-btn:disabled { opacity:0.3; cursor:default; }
 
-/* ===== EMPTY ===== */
 .empty { text-align:center; padding:80px 20px; }
 .empty-icon { font-size:36px; margin-bottom:16px; opacity:0.2; }
 .empty-title { font-size:20px; font-weight:700; color:var(--text2); margin-bottom:8px; }
 .empty-sub { font-size:13px; color:var(--text3); line-height:1.7; }
 
-/* ===== SPINNER ===== */
 .spinner {
   display:inline-block; width:12px; height:12px;
   border:1.5px solid rgba(0,212,255,0.2); border-top-color:var(--cyan);
@@ -334,7 +310,6 @@ select option { background:var(--surface); }
 }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-/* ===== MODAL ===== */
 .modal-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.8); backdrop-filter:blur(16px);
@@ -382,7 +357,6 @@ select option { background:var(--surface); }
 .btotal .label { font-weight:700; font-size:13px; }
 .btotal .value { font-size:20px; font-weight:800; }
 
-/* ===== CONFIG ===== */
 .cfg-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .cfg-card {
   background:var(--surface); border:1px solid var(--border);
@@ -402,14 +376,12 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 .iw input { padding-left:22px; }
 .full { grid-column:1/-1; }
 
-/* ===== TAXAS ===== */
 .taxas-table { width:100%; border-collapse:collapse; font-size:12px; }
 .taxas-table th { text-align:left; padding:10px 12px; font-family:var(--mono); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); border-bottom:1px solid var(--border); font-weight:400; }
 .taxas-table td { padding:10px 12px; border-bottom:1px solid rgba(30,45,69,0.4); color:var(--text); }
 .taxas-table tr:hover td { background:rgba(0,212,255,0.02); }
 .taxas-table input { width:80px; padding:5px 8px; font-size:11px; text-align:right; }
 
-/* ===== ALERTS ===== */
 .alert { border-radius:6px; padding:10px 14px; font-size:12px; margin-top:12px; display:none; font-family:var(--mono); }
 .alert.show { display:flex; align-items:center; gap:8px; }
 .alert-success { background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); color:var(--green); }
@@ -431,7 +403,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 
 <header>
   <div class="logo">
-    <img src="data:image/png;base64,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" alt="New York Multimarcas" style="height:34px;width:auto;" />
+    <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEIYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABuAMkDASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAAAAEEBQYCAwcI/8QAShAAAQMCBAMEAwsJBAsAAAAAAQACAwQRBQYSITFBUQcTInEUYYEIFTJSc5GSobHB0RYjMzRCVHLh8CQ1U4I3Q2JjdYOTorKz0v/EABoBAQEAAwEBAAAAAAAAAAAAAAABAgQFAwb/xAAwEQACAQMCAwUIAgMAAAAAAAAAAQIDBBEFIRIxQRRRYYGhBhMVInGR4fAywbHR8f/aAAwDAQACEQMRAD8A8ZIQhACEIQAhCEAIQhha0bC6AAEtgs5a2JoaAHSHiTyQz0aTaOozaJJWkuIiaXBrenQevmhqPEjdCHRvYdL2uaegIsa0Qhvmj/d6yrDN31X5YZYhXeOJ3xmkePJRytDnFzuJN06oppBHJHpLo3c+RHsTJ+lrrN+CDZSSlhj0o2VupwvgikcZBHXkIUIW1GkN/QC4u32FClMUXZDD6j0uNlIJHENtKLtd+YU0wfGn02XTK98WoQNGp2rS0N4b+tSXKbGKxTlsbsoaOGTChrFtTCHBx4OIuqfmGj+hMQ10oAhncXxDgANrj2GytrMZwr0emH5RphaFo3kHQeai8fxbBcUMMcVbBUQRO1ykm2rb4IvzN0Q/UgUNuCCHtLSbHcDiRxCUQ29wcq1ccDOCvchCFkAAhC22JHBCgW3gnNLQ1lZKIaSmlnkd+zG0uP1KCDegQk27qx7dgFb8D7MsyYjE2WeGKhifu19Q6zvY0bj5wrRhHZFQs0uxHFJ5ncxC0RN+c3J+paynXnRoSnDmv9KDvvcuzTRVqidqOFRtu4cgNLfWcqKtOE4PhWExaKGijgd8ZwGonzcd/ZwUkAHAHkuVOvOq+Kbyck2y/FLQhCwMQIQhACEIQAhCEB/9k=" alt="New York Multimarcas" style="height:34px;width:auto;" />
   </div>
   <div class="nav">
     <div class="nav-item active" onclick="showTab('pedidos')">Pedidos</div>
@@ -446,7 +418,6 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 
 <div class="layout">
 
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-section">Canais</div>
     <div class="sidebar-item active" onclick="setSidebarCanal('')" id="sb-all"><div class="dot"></div>Todos os canais</div>
@@ -462,10 +433,8 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
     <div class="sidebar-item" onclick="setSidebarCanal('203777302')" id="sb-ps"><div class="dot"></div>Prudenshopping</div>
   </div>
 
-  <!-- MAIN -->
   <div class="main">
 
-    <!-- PEDIDOS -->
     <div class="section active" id="tab-pedidos">
 
       <div class="kpi-grid">
@@ -575,7 +544,6 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
       </div>
     </div>
 
-    <!-- CONFIG -->
     <div class="section" id="tab-config">
       <div style="margin-bottom:20px;">
         <div class="page-title">Configurações</div>
@@ -586,7 +554,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
         <div style="display:flex;gap:10px;align-items:flex-end;">
           <div class="field" style="flex:1;margin-bottom:0;">
             <label>Servidor proxy</label>
-            <input type="text" id="blingKey" value="https://margem.usenewyork.com.br"
+            <input type="text" id="blingKey" value="https://margem.usenewyork.com.br" />
           </div>
           <button class="btn btn-cyan" onclick="testarConexao()">Testar</button>
           <button class="btn btn-ghost" onclick="salvarConfig()">Salvar</button>
@@ -630,7 +598,6 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
       </div>
     </div>
 
-    <!-- TAXAS -->
     <div class="section" id="tab-taxas">
       <div style="margin-bottom:20px;">
         <div class="page-title">Taxas por Canal</div>
@@ -649,11 +616,10 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
       </div>
     </div>
 
-  </div><!-- /main -->
-</div><!-- /layout -->
-</div><!-- /app -->
+  </div>
+</div>
+</div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
@@ -665,19 +631,19 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 </div>
 
 <script>
+const PROXY_URL = 'https://margem.usenewyork.com.br';
 
 let config = {};
-let taxas = [];
 let pedidosData = [];
 let currentPage = 1;
 const PAGE_SIZE = 15;
+let kpiCharts = {};
 
 const DEFAULT_CONFIG = {
-  blingKey: '',
+  blingKey: 'https://margem.usenewyork.com.br',
   custoEmbalagem: 2.50,
   custoOperacional: 1.00,
   taxaMLPadrao: 12,
-  acrescimoFrete: 0,
   aliquotaSN: 10,
   faixaSN: '720000',
   anexoSN: 'I',
@@ -688,39 +654,38 @@ const DEFAULT_CONFIG = {
   freteComprador: 0,
 };
 
-const DEFAULT_TAXAS = [
-  { categoria: 'Acessórios para Veículos', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Bebidas', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Beleza e Cuidado Pessoal', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Câmeras e Acessórios', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Casa, Móveis e Decoração', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Celulares e Telefonia', classico: 8,  premium: 12, frete: 3 },
-  { categoria: 'Construção', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Eletrodomésticos', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Eletrônicos, Áudio e Vídeo', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Esporte e Lazer', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Ferramentas', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Games', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Informática', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Livros e Revistas', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Moda e Acessórios', classico: 16, premium: 16, frete: 3 },
-  { categoria: 'Saúde', classico: 12, premium: 16, frete: 3 },
-  { categoria: 'Outros', classico: 12, premium: 16, frete: 3 },
+const TAXAS_CANAL = {
+  '203628722': 14,
+  '203953121': 14,
+  '205397393': 16,
+  '205401394': 12,
+  '206006851': 6,
+  '206029808': 14,
+  '205389906': 3,
+  '203654110': 0,
+  '203777302': 0,
+};
+
+const CANAIS_CONFIG = [
+  { id: '203628722', nome: '🛒 Mercado Livre', tipo: 'Marketplace' },
+  { id: '203953121', nome: '🛍️ Magalu',        tipo: 'Marketplace' },
+  { id: '205397393', nome: '👟 Netshoes',       tipo: 'Marketplace' },
+  { id: '205401394', nome: '📦 Amazon',         tipo: 'Marketplace' },
+  { id: '206006851', nome: '🎵 TikTok Shop',    tipo: 'Marketplace' },
+  { id: '206029808', nome: '🛒 Shopee',         tipo: 'Marketplace' },
+  { id: '205389906', nome: '🌐 Site',           tipo: 'Gateway' },
+  { id: '203654110', nome: '🏪 Parque do Povo', tipo: 'Loja Física' },
+  { id: '203777302', nome: '🏬 Prudenshopping', tipo: 'Loja Física' },
 ];
 
 function init() {
-  
   const savedConfig = localStorage.getItem('margemml_config');
-  config = savedConfig ? JSON.parse(savedConfig) : {...DEFAULT_CONFIG};
+  config = savedConfig ? {...DEFAULT_CONFIG, ...JSON.parse(savedConfig)} : {...DEFAULT_CONFIG};
 
-  taxas = JSON.parse(localStorage.getItem('margemml_taxas') || 'null') || DEFAULT_TAXAS.map(t => ({...t}));
-
-  applyConfigToForm();
-  renderTaxas();
   carregarTaxasCanal();
+  applyConfigToForm();
   renderTaxasCanal();
 
-  localStorage.removeItem('margemml_pedidos');
   pedidosData = [];
   renderPedidos();
   updateStatus(!!config.blingKey);
@@ -752,32 +717,34 @@ function showTab(name) {
 }
 
 function setSidebarCanal(lojaId) {
-  
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
   const el = document.getElementById(map[lojaId] || 'sb-all');
   if (el) el.classList.add('active');
-  
   const sel = document.getElementById('filterCanal');
   if (sel) sel.value = lojaId;
   currentPage = 1;
   renderPedidos();
 }
 
+function setVal(id, value) {
+  const el = document.getElementById(id);
+  if (el !== null && value !== undefined) el.value = value;
+}
+
 function applyConfigToForm() {
-  document.getElementById('blingKey').value = config.blingKey || '';
-  document.getElementById('custoEmbalagem').value = config.custoEmbalagem;
-  document.getElementById('custoOperacional').value = config.custoOperacional;
-  document.getElementById('taxaMLPadrao').value = config.taxaMLPadrao;
-  document.getElementById('acrescimoFrete').value = config.acrescimoFrete;
-  document.getElementById('aliquotaSN').value = config.aliquotaSN;
-  document.getElementById('faixaSN').value = config.faixaSN;
-  document.getElementById('anexoSN').value = config.anexoSN;
-  document.getElementById('cmvPadrao').value = config.cmvPadrao;
-  document.getElementById('margemMin').value = config.margemMin;
-  document.getElementById('margemAlvo').value = config.margemAlvo;
-  document.getElementById('margemExc').value = config.margemExc;
-  document.getElementById('freteComprador').value = config.freteComprador;
+  setVal('blingKey', config.blingKey);
+  setVal('custoEmbalagem', config.custoEmbalagem);
+  setVal('custoOperacional', config.custoOperacional);
+  setVal('taxaMLPadrao', config.taxaMLPadrao);
+  setVal('aliquotaSN', config.aliquotaSN);
+  setVal('faixaSN', config.faixaSN);
+  setVal('anexoSN', config.anexoSN);
+  setVal('cmvPadrao', config.cmvPadrao);
+  setVal('margemMin', config.margemMin);
+  setVal('margemAlvo', config.margemAlvo);
+  setVal('margemExc', config.margemExc);
+  setVal('freteComprador', config.freteComprador);
 }
 
 function getVal(id, defaultVal = 0) {
@@ -788,11 +755,10 @@ function getVal(id, defaultVal = 0) {
 
 function readConfigFromForm() {
   return {
-    blingKey: getVal('blingKey', 'via-proxy'),
+    blingKey: getVal('blingKey', PROXY_URL),
     custoEmbalagem: getVal('custoEmbalagem', 2.50),
     custoOperacional: getVal('custoOperacional', 1.00),
     taxaMLPadrao: getVal('taxaMLPadrao', 12),
-    acrescimoFrete: getVal('acrescimoFrete', 0),
     aliquotaSN: getVal('aliquotaSN', 10),
     faixaSN: getVal('faixaSN', '720000'),
     anexoSN: getVal('anexoSN', 'I'),
@@ -809,7 +775,7 @@ function salvarConfig() {
   localStorage.setItem('margemml_config', JSON.stringify(config));
   updateStatus(!!config.blingKey);
   renderPedidos();
-  alert('✅ Configurações salvas! Embalagem: R$ ' + config.custoEmbalagem.toFixed(2) + ' | Operacional: R$ ' + config.custoOperacional.toFixed(2) + ' | Imposto: ' + config.aliquotaSN + '%');
+  alert('✅ Configurações salvas!');
 }
 
 function resetConfig() {
@@ -841,18 +807,6 @@ function updateStatus(connected) {
   }
 }
 
-const CANAIS_CONFIG = [
-  { id: '203628722', nome: '🛒 Mercado Livre', tipo: 'Marketplace' },
-  { id: '203953121', nome: '🛍️ Magalu',        tipo: 'Marketplace' },
-  { id: '205397393', nome: '👟 Netshoes',       tipo: 'Marketplace' },
-  { id: '205401394', nome: '📦 Amazon',         tipo: 'Marketplace' },
-  { id: '206006851', nome: '🎵 TikTok Shop',    tipo: 'Marketplace' },
-  { id: '206029808', nome: '🛒 Shopee',         tipo: 'Marketplace' },
-  { id: '205389906', nome: '🌐 Site',           tipo: 'Gateway' },
-  { id: '203654110', nome: '🏪 Parque do Povo', tipo: 'Loja Física' },
-  { id: '203777302', nome: '🏬 Prudenshopping', tipo: 'Loja Física' },
-];
-
 function renderTaxasCanal() {
   const saved = JSON.parse(localStorage.getItem('margemml_taxas_canal') || '{}');
   const body = document.getElementById('taxasCanalBody');
@@ -875,7 +829,6 @@ function salvarTaxasCanal() {
     if (el) saved[c.id] = +el.value;
   });
   localStorage.setItem('margemml_taxas_canal', JSON.stringify(saved));
-  
   Object.assign(TAXAS_CANAL, saved);
   alert('✅ Taxas salvas! As margens serão recalculadas na próxima sincronização.');
 }
@@ -890,31 +843,6 @@ function carregarTaxasCanal() {
   Object.assign(TAXAS_CANAL, saved);
 }
 
-function renderTaxas() {
-  const body = document.getElementById('taxasBody');
-  if (!body) return;
-  body.innerHTML = taxas.map((t,i) => `
-    <tr>
-      <td style="color:var(--text);">${t.categoria}</td>
-      <td><input type="number" min="0" max="30" step="0.1" value="${t.classico}" onchange="taxas[${i}].classico=+this.value" /></td>
-      <td><input type="number" min="0" max="30" step="0.1" value="${t.premium}" onchange="taxas[${i}].premium=+this.value" /></td>
-      <td><input type="number" min="0" max="10" step="0.1" value="${t.frete}" onchange="taxas[${i}].frete=+this.value" /></td>
-    </tr>
-  `).join('');
-}
-
-function salvarTaxas() {
-  localStorage.setItem('margemml_taxas', JSON.stringify(taxas));
-  alert('✅ Taxas salvas!');
-}
-
-function resetTaxas() {
-  taxas = DEFAULT_TAXAS.map(t => ({...t}));
-  renderTaxas();
-  localStorage.removeItem('margemml_taxas');
-}
-
-const PROXY_URL = 'https://margem.usenewyork.com.br';
 async function testarConexao() {
   showAlert('warn', '🔄 Testando conexão com o servidor...');
 
@@ -923,26 +851,22 @@ async function testarConexao() {
 
     if (resp.ok) {
       showAlert('success', '✅ Conexão com Bling estabelecida via proxy!');
-      config.blingKey = 'via-proxy';
-      localStorage.setItem('margemml_config', JSON.stringify(config));
       updateStatus(true);
     } else if (resp.status === 401) {
-      showAlert('error', '❌ Token inválido no servidor. Verifique a variável BLING_TOKEN no Servidor.');
+      showAlert('error', '❌ Não autenticado no Bling. Acesse ' + PROXY_URL + '/auth para autenticar.');
     } else {
-      showAlert('error', `❌ Erro ${resp.status}. Verifique o servidor no Servidor.`);
+      showAlert('error', `❌ Erro ${resp.status} ao conectar no servidor.`);
     }
   } catch(e) {
-    showAlert('error', '❌ Servidor proxy offline. Verifique se o Servidor está rodando.');
+    showAlert('error', '❌ Servidor proxy offline. Verifique se o servidor está rodando.');
   }
 }
 
 function calcularMargem(pedido) {
   const venda = pedido.venda || 0;
-  
   const cmv = (pedido.cmv !== null && pedido.cmv !== undefined) ? pedido.cmv : (venda * config.cmvPadrao / 100);
-  
   const taxaML = (pedido.taxaML !== null && pedido.taxaML !== undefined) ? pedido.taxaML : (venda * config.taxaMLPadrao / 100);
-  const frete = pedido.frete || 0; 
+  const frete = pedido.frete || 0;
   const freteComprador = config.freteComprador || 0;
   const embalagem = config.custoEmbalagem;
   const operacional = config.custoOperacional;
@@ -966,7 +890,6 @@ async function loadPedidos() {
   const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
   const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
 
-  localStorage.removeItem('margemml_pedidos');
   pedidosData = [];
 
   try {
@@ -985,7 +908,7 @@ async function loadPedidos() {
       const resp = await fetch(url);
 
       if (!resp.ok) {
-        if (resp.status === 401) throw new Error('Token inválido no servidor (401). Verifique BLING_TOKEN no Render.');
+        if (resp.status === 401) throw new Error('Não autenticado. Acesse ' + PROXY_URL + '/auth para reautenticar.');
         throw new Error(`Erro ${resp.status} ao buscar pedidos.`);
       }
 
@@ -997,9 +920,7 @@ async function loadPedidos() {
       pagina++;
     }
 
-    localStorage.removeItem('margemml_pedidos');
     pedidosData = todos.map(p => mapBlingPedido(p));
-    localStorage.setItem('margemml_pedidos', JSON.stringify(pedidosData));
 
     updateStatus(true);
     currentPage = 1;
@@ -1007,23 +928,11 @@ async function loadPedidos() {
     updateChartsFromData();
 
   } catch(e) {
-    alert('❌ Erro ao buscar pedidos: ' + e.message + '\n\nVerifique se o servidor no Render está online.');
+    alert('❌ Erro ao buscar pedidos: ' + e.message);
   } finally {
     spinner.style.display = 'none';
   }
 }
-
-const TAXAS_CANAL = {
-  '203628722': 14,   
-  '203953121': 14,   
-  '205397393': 16,   
-  '205401394': 12,   
-  '206006851': 6,    
-  '206029808': 14,   
-  '205389906': 3,    
-  '203654110': 0,    
-  '203777302': 0,    
-};
 
 function getTaxaCanal(lojaId) {
   if (TAXAS_CANAL[lojaId] !== undefined) return TAXAS_CANAL[lojaId];
@@ -1067,34 +976,6 @@ function mapBlingPedido(p) {
   };
 }
 
-function gerarDadosDemo(n) {
-  const produtos = [
-    'Fone Bluetooth Pro X200', 'Carregador Rápido 65W', 'Suporte Notebook Ajust.',
-    'Teclado Mecânico RGB', 'Mouse Sem Fio Silent', 'Cabo USB-C 2m Nylon',
-    'Webcam Full HD 1080p', 'Hub USB 7 Portas', 'Mousepad Gamer XL',
-    'Luminária LED Mesa', 'Película Vidro iPhone', 'Capa Silicone Samsung',
-  ];
-
-  const hoje = new Date();
-  return Array.from({length:n}, (_,i) => {
-    const venda = +(Math.random()*350 + 50).toFixed(2);
-    const cmvPct = 0.30 + Math.random()*0.25;
-    const taxaML = +(venda * (0.08 + Math.random()*0.08)).toFixed(2);
-    const frete = Math.random() > 0.5 ? +(Math.random()*20).toFixed(2) : 0;
-    const data = new Date(hoje - Math.random()*30*24*3600*1000);
-    return {
-      numero: 100000 + i,
-      data: formatDate(data),
-      produto: produtos[i % produtos.length],
-      venda,
-      cmv: +(venda * cmvPct).toFixed(2),
-      taxaML,
-      frete,
-      origem: 'demo',
-    };
-  });
-}
-
 function renderPedidos() {
   const filterMargem = document.getElementById('filterMargem').value;
   const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
@@ -1124,7 +1005,6 @@ function renderPedidos() {
   document.getElementById('kpi-taxas').textContent = formatMoney(totalTaxas);
   document.getElementById('kpi-impostos').textContent = formatMoney(totalImpostos);
   document.getElementById('kpi-margem').textContent = formatPct(margemMedia);
-  document.getElementById('kpi-margem').style.color = margemMedia < margemMin ? 'var(--danger)' : margemMedia >= margemAlvo ? 'var(--accent)' : 'var(--warn)';
 
   document.getElementById('totalBadge').textContent = filtered.length + ' pedidos';
 
@@ -1136,10 +1016,10 @@ function renderPedidos() {
   const body = document.getElementById('ordersBody');
 
   if (filtered.length === 0) {
-    body.innerHTML = `<tr><td colspan="11"><div class="empty-state">
+    body.innerHTML = `<tr><td colspan="11"><div class="empty">
       <div class="empty-icon">${pedidosData.length === 0 ? '🔗' : '🔍'}</div>
-      <div class="empty-title">${pedidosData.length === 0 ? 'Conecte o Bling para começar' : 'Nenhum pedido com esse filtro'}</div>
-      <div class="empty-sub">${pedidosData.length === 0 ? 'Vá em Configurações e clique em Sincronizar.' : 'Tente mudar os filtros de data ou margem.'}</div>
+      <div class="empty-title">${pedidosData.length === 0 ? 'Aguardando sincronização' : 'Nenhum pedido com esse filtro'}</div>
+      <div class="empty-sub">${pedidosData.length === 0 ? 'Selecione o período e clique em Sincronizar.' : 'Tente mudar os filtros de data ou margem.'}</div>
     </div></td></tr>`;
     document.getElementById('paginationRow').style.display = 'none';
     return;
@@ -1147,7 +1027,7 @@ function renderPedidos() {
 
   body.innerHTML = slice.map(p => {
     const pct = p.margem;
-    const clr = pct < config.margemMin ? 'var(--danger)' : pct >= config.margemAlvo ? 'var(--accent)' : 'var(--warn)';
+    const clr = pct < config.margemMin ? 'var(--pink)' : pct >= config.margemAlvo ? 'var(--green)' : 'var(--orange)';
     const barW = Math.min(100, Math.max(0, pct));
     const badge = pct < config.margemMin
       ? `<span class="chip chip-bad">BAIXA</span>`
@@ -1155,23 +1035,20 @@ function renderPedidos() {
         ? `<span class="chip chip-ok">BOA</span>`
         : `<span class="chip chip-warn">OK</span>`;
 
-    const isDemo = p.origem === 'demo' ? `<span class="badge badge-blue" style="margin-left:4px;font-size:9px;">demo</span>` : '';
-
     return `<tr onclick="openModal(${p.numero})">
-      <td class="highlight">#${p.numero}${isDemo}</td>
+      <td class="hi">#${p.numero}</td>
       <td>${p.data}</td>
-      <td><span class="badge badge-blue" style="font-size:10px;">${p.canal || '?'}</span></td>
-      <td class="highlight" title="${p.produto}">${p.produto.length > 22 ? p.produto.substring(0,22)+'…' : p.produto}</td>
-      <td class="highlight">${formatMoney(p.venda)}</td>
+      <td>${p.canal || '?'}</td>
+      <td class="hi" title="${p.produto}">${p.produto.length > 22 ? p.produto.substring(0,22)+'…' : p.produto}</td>
+      <td class="hi">${formatMoney(p.venda)}</td>
       <td>${formatMoney(p.cmv)}</td>
-      <td style="color:var(--accent2);">${formatMoney(p.taxaML)}</td>
-      <td>${formatMoney(p.frete)}</td>
-      <td style="color:var(--warn);">${formatMoney(p.imposto)}</td>
-      <td style="color:${p.lucro>=0?'var(--accent)':'var(--danger)'};">${formatMoney(p.lucro)}</td>
+      <td class="warn">${formatMoney(p.taxaML)}</td>
+      <td class="gold">${formatMoney(p.imposto)}</td>
+      <td style="color:${p.lucro>=0?'var(--green)':'var(--pink)'};">${formatMoney(p.lucro)}</td>
       <td>
-        <div class="margin-bar">
-          <div class="bar-track"><div class="bar-fill" style="width:${barW}%;background:${clr};"></div></div>
-          <span style="color:${clr};font-family:var(--font-mono);font-size:11px;">${formatPct(pct)}</span>
+        <div class="mbar">
+          <div class="mtrack"><div class="mfill" style="width:${barW}%;background:${clr};"></div></div>
+          <span style="color:${clr};font-size:11px;">${formatPct(pct)}</span>
         </div>
       </td>
       <td>${badge}</td>
@@ -1188,7 +1065,7 @@ function renderPedidos() {
     if (totalPages <= 7 || Math.abs(i-currentPage) <= 2 || i===1 || i===totalPages) {
       btns.innerHTML += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
     } else if (Math.abs(i-currentPage) === 3) {
-      btns.innerHTML += `<span style="color:var(--muted);padding:0 4px;font-size:12px;">…</span>`;
+      btns.innerHTML += `<span style="color:var(--text3);padding:0 4px;font-size:12px;">…</span>`;
     }
   }
   btns.innerHTML += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
@@ -1211,7 +1088,7 @@ function openModal(num) {
   document.getElementById('modalContent').innerHTML = `
     <div class="brow">
       <span class="brow-label">📅 Data</span>
-      <span class="breakdown-value">${m.data}</span>
+      <span class="brow-val">${m.data}</span>
     </div>
     <div class="brow">
       <span class="brow-label">🛒 Receita de Venda</span>
@@ -1249,11 +1126,11 @@ function openModal(num) {
     <div style="height:1px;background:var(--border);margin:12px 0;"></div>
     <div class="btotal">
       <span class="label">💰 Lucro Líquido</span>
-      <span class="value" style="color:${m.lucro>=0?'var(--accent)':'var(--danger)'};">${formatMoney(m.lucro)}</span>
+      <span class="value" style="color:${m.lucro>=0?'var(--green)':'var(--pink)'};">${formatMoney(m.lucro)}</span>
     </div>
     <div class="btotal" style="margin-top:8px;">
       <span class="label">📊 Margem Líquida</span>
-      <span class="value" style="color:${m.margem<config.margemMin?'var(--danger)':m.margem>=config.margemAlvo?'var(--accent)':'var(--warn)'};">${formatPct(m.margem)}</span>
+      <span class="value" style="color:${m.margem<config.margemMin?'var(--pink)':m.margem>=config.margemAlvo?'var(--green)':'var(--orange)'};">${formatPct(m.margem)}</span>
     </div>
   `;
 
@@ -1267,21 +1144,6 @@ function closeModal(e) {
 function closeModalBtn() {
   document.getElementById('modalOverlay').classList.remove('show');
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
-  if (document.getElementById('filterCanal')) {
-    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
-  }
-  if (document.getElementById('filterSituacao')) {
-    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
-  }
-  document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
-  document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
-});
-
-let kpiCharts = {};
 
 function initCharts() {
   const chartConfigs = [
@@ -1357,45 +1219,6 @@ function updateChartsFromData() {
   }, 100);
 }
 
-function updateStatus(connected) {
-  const badge = document.getElementById('statusBadge');
-  const text = document.getElementById('statusText');
-  if (connected) {
-    badge.classList.add('connected');
-    text.textContent = 'Bling conectado';
-  } else {
-    badge.classList.remove('connected');
-    text.textContent = 'Desconectado';
-  }
-}
-
-function setSidebarCanal(lojaId) {
-  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-  const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
-  const el = document.getElementById(map[lojaId] || 'sb-all');
-  if (el) el.classList.add('active');
-  const sel = document.getElementById('filterCanal');
-  if (sel) sel.value = lojaId;
-  currentPage = 1;
-  renderPedidos();
-}
-
-function showTab(name) {
-  document.querySelectorAll('.nav-item').forEach((t,i) => {
-    t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
-  });
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-const _origMapBlingPedido = mapBlingPedido;
-
-const _patchRows = true;
-
-document.addEventListener('DOMContentLoaded', () => {
-  initCharts();
-});
-
 function exportarExcel() {
   const filtered = window._filteredPedidos || pedidosData.map(p => ({...p, ...calcularMargem(p)}));
   if (!filtered || filtered.length === 0) {
@@ -1407,7 +1230,7 @@ function exportarExcel() {
   const de = document.getElementById('filterDateFrom')?.value || '';
   const ate = document.getElementById('filterDateTo')?.value || '';
 
-  let csv = 'Pedido;Data;Canal;Produto;Venda;CMV;Taxa Canal;Frete;Embalagem;Custo Operacional;Imposto SN;Outras Despesas;Lucro Líquido;Margem %\n';
+  let csv = 'Pedido;Data;Canal;Produto;Venda;CMV;Taxa Canal;Frete;Embalagem;Custo Operacional;Imposto SN;Outras Despesas;Lucro Liquido;Margem %\n';
 
   filtered.forEach(p => {
     const m = calcularMargem(p);
@@ -1510,6 +1333,21 @@ function exportarPDF() {
   win.document.close();
   win.print();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  initCharts();
+
+  document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
+  if (document.getElementById('filterCanal')) {
+    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
+  }
+  if (document.getElementById('filterSituacao')) {
+    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
+  }
+  document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
+  document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
+});
 </script>
 </body>
 </html>
