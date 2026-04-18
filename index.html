@@ -1342,8 +1342,10 @@ function exportarPDF() {
   win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatorio NY Multimarcas</title><style>');
   win.document.write('body{font-family:Arial,sans-serif;font-size:9px;color:#222;margin:15px;}');
   win.document.write('h1{font-size:18px;margin-bottom:4px;}.sub{color:#666;margin-bottom:16px;font-size:12px;}');
-  win.document.write('.kpis{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;}');
-  win.document.write('.kpi{background:#f5f5f5;border-radius:6px;padding:12px 16px;min-width:120px;}');
+  win.document.write('.kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px;}');
+  win.document.write('.kpi{background:#f5f5f5;border-radius:6px;padding:10px 8px;min-width:0;}');
+  win.document.write('.kpi-label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
+  win.document.write('.kpi-value{font-size:14px;font-weight:bold;margin-top:3px;white-space:nowrap;}');
   win.document.write('.kpi-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;}');
   win.document.write('.kpi-value{font-size:18px;font-weight:bold;margin-top:4px;}');
   win.document.write('table{width:100%;border-collapse:collapse;}');
