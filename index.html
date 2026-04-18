@@ -278,9 +278,10 @@ select option { background:var(--surface); }
   font-size:9px; font-family:var(--mono);
   letter-spacing:0.5px; border:1px solid; font-weight:500;
 }
-.chip-ok   { border-color:rgba(0,229,160,0.3); color:var(--green); background:rgba(0,229,160,0.06); }
-.chip-warn { border-color:rgba(255,124,42,0.3); color:var(--orange); background:rgba(255,124,42,0.06); }
-.chip-bad  { border-color:rgba(255,61,138,0.3); color:var(--pink); background:rgba(255,61,138,0.06); }
+.chip-ok    { border-color:rgba(0,229,160,0.3); color:var(--green); background:rgba(0,229,160,0.06); }
+.chip-warn  { border-color:rgba(255,124,42,0.3); color:var(--orange); background:rgba(255,124,42,0.06); }
+.chip-bad   { border-color:rgba(255,61,138,0.3); color:var(--pink); background:rgba(255,61,138,0.06); }
+.chip-alert { border-color:rgba(255,209,102,0.4); color:var(--gold); background:rgba(255,209,102,0.1); font-weight:700; }
 
 .pagination {
   display:flex; align-items:center; justify-content:space-between;
@@ -864,7 +865,8 @@ async function testarConexao() {
 
 function calcularMargem(pedido) {
   const venda = pedido.venda || 0;
-  const cmv = (pedido.cmv !== null && pedido.cmv !== undefined) ? pedido.cmv : (venda * config.cmvPadrao / 100);
+  const cmv = (pedido.cmv !== null && pedido.cmv !== undefined && pedido.cmv > 0) ? pedido.cmv : 0;
+  const semCusto = !cmv || cmv === 0;
   const taxaML = (pedido.taxaML !== null && pedido.taxaML !== undefined) ? pedido.taxaML : (venda * config.taxaMLPadrao / 100);
   const frete = pedido.frete || 0;
   const freteComprador = config.freteComprador || 0;
@@ -878,7 +880,7 @@ function calcularMargem(pedido) {
   const lucro = receitaLiq - custoTotal;
   const margem = venda > 0 ? (lucro / venda) * 100 : 0;
 
-  return { venda, cmv, taxaML, frete, embalagem, operacional, imposto, outrasDespesas, lucro, margem, freteComprador };
+  return { venda, cmv, taxaML, frete, embalagem, operacional, imposto, outrasDespesas, lucro, margem, freteComprador, semCusto };
 }
 
 async function loadPedidos() {
@@ -1027,15 +1029,19 @@ function renderPedidos() {
 
   body.innerHTML = slice.map(p => {
     const pct = p.margem;
-    const clr = pct < config.margemMin ? 'var(--pink)' : pct >= config.margemAlvo ? 'var(--green)' : 'var(--orange)';
+    const clr = p.semCusto ? 'var(--gold)' : pct < config.margemMin ? 'var(--pink)' : pct >= config.margemAlvo ? 'var(--green)' : 'var(--orange)';
     const barW = Math.min(100, Math.max(0, pct));
-    const badge = pct < config.margemMin
-      ? `<span class="chip chip-bad">BAIXA</span>`
-      : pct >= config.margemAlvo
-        ? `<span class="chip chip-ok">BOA</span>`
-        : `<span class="chip chip-warn">OK</span>`;
+    const badge = p.semCusto
+      ? `<span class="chip chip-alert">⚠ SEM CUSTO</span>`
+      : pct < config.margemMin
+        ? `<span class="chip chip-bad">BAIXA</span>`
+        : pct >= config.margemAlvo
+          ? `<span class="chip chip-ok">BOA</span>`
+          : `<span class="chip chip-warn">OK</span>`;
 
-    return `<tr onclick="openModal(${p.numero})">
+    const rowStyle = p.semCusto ? 'background:rgba(255,209,102,0.04);border-left:2px solid var(--gold);' : '';
+
+    return `<tr onclick="openModal(${p.numero})" style="${rowStyle}">
       <td class="hi">#${p.numero}</td>
       <td>${p.data}</td>
       <td>${p.canal || '?'}</td>
