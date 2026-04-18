@@ -128,8 +128,8 @@ header {
 
 .kpi-grid {
   display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:12px;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
   margin-bottom:24px;
 }
 
@@ -473,6 +473,20 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <div class="kpi-value" id="kpi-margem" style="color:var(--purple);">0%</div>
           <div class="kpi-sub" id="kpi-margem-sub">líquida</div>
           <div class="kpi-chart-wrap"><canvas id="chart-margem"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--pink),transparent);"></div>
+          <div class="kpi-label">CMV Total</div>
+          <div class="kpi-value" id="kpi-cmv" style="color:var(--pink);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-cmv-sub">custo produtos</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-cmv"></canvas></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-glow" style="background:linear-gradient(90deg,var(--cyan2),transparent);"></div>
+          <div class="kpi-label">Ticket Médio</div>
+          <div class="kpi-value" id="kpi-ticket" style="color:var(--cyan2);">R$ 0</div>
+          <div class="kpi-sub" id="kpi-ticket-sub">por pedido</div>
+          <div class="kpi-chart-wrap"><canvas id="chart-ticket"></canvas></div>
         </div>
       </div>
 
@@ -994,11 +1008,14 @@ function renderPedidos() {
   if (filterMargem === 'warn')  filtered = filtered.filter(p => p.margem >= margemMin && p.margem < margemAlvo);
   if (filterMargem === 'bad')   filtered = filtered.filter(p => p.margem < margemMin);
 
-  const totalReceita = filtered.reduce((a,p) => a + p.venda, 0);
+const totalReceita = filtered.reduce((a,p) => a + p.venda, 0);
   const totalLucro   = filtered.reduce((a,p) => a + p.lucro, 0);
   const totalTaxas   = filtered.reduce((a,p) => a + p.taxaML, 0);
   const totalImpostos= filtered.reduce((a,p) => a + p.imposto, 0);
+  const totalCMV     = filtered.reduce((a,p) => a + (p.cmv || 0), 0);
+  const ticketMedio  = filtered.length > 0 ? totalReceita / filtered.length : 0;
   const margemMedia  = totalReceita > 0 ? (totalLucro/totalReceita)*100 : 0;
+  const pedidosSemCusto = filtered.filter(p => p.semCusto).length;
 
   document.getElementById('kpi-lucro').textContent = formatMoney(totalLucro);
   document.getElementById('kpi-lucro-sub').textContent = filtered.length + ' pedidos';
@@ -1007,6 +1024,10 @@ function renderPedidos() {
   document.getElementById('kpi-taxas').textContent = formatMoney(totalTaxas);
   document.getElementById('kpi-impostos').textContent = formatMoney(totalImpostos);
   document.getElementById('kpi-margem').textContent = formatPct(margemMedia);
+  document.getElementById('kpi-cmv').textContent = formatMoney(totalCMV);
+  document.getElementById('kpi-cmv-sub').textContent = pedidosSemCusto > 0 ? `⚠ ${pedidosSemCusto} sem custo` : 'custo produtos';
+  document.getElementById('kpi-ticket').textContent = formatMoney(ticketMedio);
+  document.getElementById('kpi-ticket-sub').textContent = filtered.length + ' pedidos';
 
   document.getElementById('totalBadge').textContent = filtered.length + ' pedidos';
 
@@ -1158,6 +1179,8 @@ function initCharts() {
     { id: 'chart-taxas', color: getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() },
     { id: 'chart-impostos', color: getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() },
     { id: 'chart-margem', color: getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() },
+    { id: 'chart-cmv', color: getComputedStyle(document.documentElement).getPropertyValue('--pink').trim() },
+    { id: 'chart-ticket', color: getComputedStyle(document.documentElement).getPropertyValue('--cyan2').trim() },
   ];
 
   chartConfigs.forEach(cfg => {
@@ -1183,14 +1206,16 @@ function initCharts() {
 function updateCharts(pedidos) {
   if (!pedidos || pedidos.length === 0) return;
 
-  const byDate = {};
+ const byDate = {};
   pedidos.forEach(p => {
     const calc = calcularMargem(p);
-    if (!byDate[p.data]) byDate[p.data] = { lucro:0, receita:0, taxas:0, impostos:0, margem:[] };
+    if (!byDate[p.data]) byDate[p.data] = { lucro:0, receita:0, taxas:0, impostos:0, cmv:0, count:0, margem:[] };
     byDate[p.data].lucro += calc.lucro;
     byDate[p.data].receita += calc.venda;
     byDate[p.data].taxas += calc.taxaML;
     byDate[p.data].impostos += calc.imposto;
+    byDate[p.data].cmv += (calc.cmv || 0);
+    byDate[p.data].count += 1;
     byDate[p.data].margem.push(calc.margem);
   });
 
@@ -1199,6 +1224,8 @@ function updateCharts(pedidos) {
   const receitas  = dates.map(d => byDate[d].receita);
   const taxas     = dates.map(d => byDate[d].taxas);
   const impostos  = dates.map(d => byDate[d].impostos);
+  const cmvs      = dates.map(d => byDate[d].cmv);
+  const tickets   = dates.map(d => byDate[d].count > 0 ? byDate[d].receita / byDate[d].count : 0);
   const margens   = dates.map(d => byDate[d].margem.reduce((a,b)=>a+b,0)/byDate[d].margem.length);
 
   const updates = [
@@ -1207,6 +1234,8 @@ function updateCharts(pedidos) {
     { id: 'chart-taxas',    data: taxas },
     { id: 'chart-impostos', data: impostos },
     { id: 'chart-margem',   data: margens },
+    { id: 'chart-cmv',      data: cmvs },
+    { id: 'chart-ticket',   data: tickets },
   ];
 
   updates.forEach(u => {
