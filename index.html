@@ -926,6 +926,7 @@ function calcularMargem(pedido) {
 
 async function loadPedidos() {
   const spinner = document.getElementById('loadSpinner');
+  const totalBadge = document.getElementById('totalBadge');
   spinner.style.display = 'inline';
 
   const dateFrom = document.getElementById('filterDateFrom').value;
@@ -936,39 +937,64 @@ async function loadPedidos() {
   pedidosData = [];
 
   try {
-    let todos = [];
-    let pagina = 1;
-    let temMais = true;
+    // Etapa 1: disparar job em background
+    let params = '';
+    if (dateFrom) params += `&dataInicio=${dateFrom}`;
+    if (dateTo)   params += `&dataFim=${dateTo}`;
+    if (filterCanal) params += `&idLoja=${filterCanal}`;
+    if (filterSituacao) params += `&idSituacao=${filterSituacao}`;
+    if (params) params = '?' + params.substring(1);
 
-    while (temMais && pagina <= 10) {
-      let params = `pagina=${pagina}&limite=100`;
-      if (dateFrom) params += `&dataInicio=${dateFrom}`;
-      if (dateTo)   params += `&dataFim=${dateTo}`;
-      if (filterCanal) params += `&idLoja=${filterCanal}`;
-      if (filterSituacao) params += `&idSituacao=${filterSituacao}`;
+    const startResp = await fetch(`${PROXY_URL}/sync/start${params}`);
+    if (!startResp.ok) {
+      if (startResp.status === 401) throw new Error('Não autenticado. Acesse ' + PROXY_URL + '/auth para reautenticar.');
+      throw new Error(`Erro ${startResp.status} ao iniciar sincronização.`);
+    }
+    const { jobId } = await startResp.json();
 
-      const url = `${PROXY_URL}/bling/pedidos/vendas?${params}`;
-      const resp = await fetch(url);
+    // Etapa 2: polling do status a cada 1.5s
+    let tentativas = 0;
+    const maxTentativas = 400; // 10 minutos (400 × 1.5s)
 
-      if (!resp.ok) {
-        if (resp.status === 401) throw new Error('Não autenticado. Acesse ' + PROXY_URL + '/auth para reautenticar.');
-        throw new Error(`Erro ${resp.status} ao buscar pedidos.`);
+    while (tentativas < maxTentativas) {
+      await new Promise(r => setTimeout(r, 1500));
+      tentativas++;
+
+      const statusResp = await fetch(`${PROXY_URL}/sync/status/${jobId}`);
+      if (!statusResp.ok) throw new Error('Falha ao consultar status do job.');
+      const status = await statusResp.json();
+
+      // Atualiza o badge com o progresso
+      if (status.status === 'rodando') {
+        if (status.total > 0) {
+          totalBadge.textContent = `${status.progresso}/${status.total} pedidos • ${status.tempoDecorrido}s`;
+        } else {
+          totalBadge.textContent = status.mensagem || 'Buscando...';
+        }
+        continue;
       }
 
-      const data = await resp.json();
-      const items = data.data || [];
-      todos = todos.concat(items);
+      if (status.status === 'erro') {
+        throw new Error(status.erro || 'Erro desconhecido no job.');
+      }
 
-      if (items.length < 100) temMais = false;
-      pagina++;
+      if (status.status === 'concluido') {
+        // Etapa 3: buscar resultado
+        const resultResp = await fetch(`${PROXY_URL}/sync/result/${jobId}`);
+        if (!resultResp.ok) throw new Error('Falha ao buscar resultado do job.');
+        const data = await resultResp.json();
+        const items = data.data || [];
+
+        pedidosData = items.map(p => mapBlingPedido(p));
+        updateStatus(true);
+        currentPage = 1;
+        renderPedidos();
+        updateChartsFromData();
+        return;
+      }
     }
 
-    pedidosData = todos.map(p => mapBlingPedido(p));
-
-    updateStatus(true);
-    currentPage = 1;
-    renderPedidos();
-    updateChartsFromData();
+    throw new Error('Tempo esgotado aguardando sincronização (10 minutos).');
 
   } catch(e) {
     alert('❌ Erro ao buscar pedidos: ' + e.message);
