@@ -496,6 +496,12 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <div class="count-tag" id="totalBadge">0 pedidos</div>
         </div>
         <div class="toolbar-right">
+          <div style="display:flex; gap:4px; margin-right:4px;">
+            <button class="btn btn-ghost" style="padding:6px 10px;font-size:10px;" onclick="setPeriodo('hoje')" title="Só hoje">Hoje</button>
+            <button class="btn btn-ghost" style="padding:6px 10px;font-size:10px;" onclick="setPeriodo('7dias')" title="Últimos 7 dias">7d</button>
+            <button class="btn btn-ghost" style="padding:6px 10px;font-size:10px;" onclick="setPeriodo('mes')" title="Do dia 1 até hoje">Mês</button>
+            <button class="btn btn-ghost" style="padding:6px 10px;font-size:10px;" onclick="setPeriodo('mesAnterior')" title="Mês passado completo">Anterior</button>
+          </div>
           <input type="date" id="filterDateFrom" style="width:130px;" />
           <span style="color:var(--text3);font-size:11px;font-family:var(--mono);">—</span>
           <input type="date" id="filterDateTo" style="width:130px;" />
@@ -815,10 +821,47 @@ function init() {
   renderPedidos();
   updateStatus(!!config.blingKey);
 
+  // Abre sempre no "Mês atual" (dia 1 até hoje)
+  setPeriodo('mes');
+
+  // Quando a aba recebe foco depois de ficar inativa, atualiza o dia de hoje automaticamente
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) atualizarDataParaHojeSeNecessario();
+  });
+  window.addEventListener('focus', atualizarDataParaHojeSeNecessario);
+}
+
+// Atualiza o campo "data fim" pra hoje se ainda estiver num dia anterior (usuário deixou aba aberta)
+function atualizarDataParaHojeSeNecessario() {
+  const hoje = formatDate(new Date());
+  const inpTo = document.getElementById('filterDateTo');
+  if (inpTo && inpTo.value && inpTo.value < hoje) {
+    inpTo.value = hoje;
+  }
+}
+
+// Atalhos de período
+function setPeriodo(tipo) {
   const hoje = new Date();
-  const trintaDias = new Date(hoje - 30*24*3600*1000);
-  document.getElementById('filterDateTo').value = formatDate(hoje);
-  document.getElementById('filterDateFrom').value = formatDate(trintaDias);
+  let de, ate;
+  if (tipo === 'hoje') {
+    de = hoje; ate = hoje;
+  } else if (tipo === '7dias') {
+    de = new Date(hoje.getTime() - 6*24*3600*1000); ate = hoje;
+  } else if (tipo === 'mes') {
+    // Dia 1 do mês atual até hoje
+    de = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    ate = hoje;
+  } else if (tipo === 'mesAnterior') {
+    // Mês passado completo: dia 1 até último dia
+    de = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0);  // dia 0 do mês atual = último do anterior
+  } else {
+    // Fallback: últimos 30 dias
+    de = new Date(hoje.getTime() - 30*24*3600*1000); ate = hoje;
+  }
+  document.getElementById('filterDateFrom').value = formatDate(de);
+  document.getElementById('filterDateTo').value = formatDate(ate);
 }
 
 function formatDate(d) {
