@@ -876,6 +876,21 @@ function formatPct(v) {
   return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%';
 }
 
+// Gera label amigável do método de pagamento pra exibir no modal
+function labelMetodo(metodo, bandeira, numParcelas) {
+  if (!metodo) return '';
+  const bandeiraNomes = { visa:'Visa', mastercard:'Mastercard', elo:'Elo', amex:'Amex', diners:'Diners', hipercard:'Hipercard' };
+  const bandeiraNome = bandeira && bandeiraNomes[bandeira] ? bandeiraNomes[bandeira] : '';
+  if (metodo === 'pix') return 'Pix';
+  if (metodo === 'boleto') return 'Boleto';
+  if (metodo === 'debito') return 'Débito' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  if (metodo === 'credito_1x') return 'Crédito 1x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  if (metodo === 'credito_2_6x') return 'Crédito ' + (numParcelas || '2-6') + 'x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  if (metodo === 'credito_7_12x') return 'Crédito ' + (numParcelas || '7-12') + 'x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  if (metodo === 'dinheiro') return 'Dinheiro';
+  return metodo;
+}
+
 function showTab(name) {
   document.querySelectorAll('.nav-item').forEach((t,i) => {
     t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
@@ -1294,6 +1309,7 @@ function mapBlingPedido(p) {
   const apiTrouxeTaxa = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined);
 
   // Helper: calcula taxa pro canal Site (Tray + Cielo por bandeira/método)
+  // Retorna { total, tray, gateway } pra permitir exibição separada
   function calcularTaxaSite() {
     const tp = taxaCfg.taxasPagamento || {};
     const metodo = p.metodoPagamento;
@@ -1302,7 +1318,7 @@ function mapBlingPedido(p) {
     // Tray sempre aplica sobre qualquer venda do site
     const taxaTray = venda * (taxaCfg.pct || 0) / 100;
 
-    // Taxa Cielo depende do método
+    // Taxa Cielo/Gateway depende do método
     let taxaCielo = 0;
     if (metodo && tp[metodo]) {
       const cfg = tp[metodo];
@@ -1318,13 +1334,27 @@ function mapBlingPedido(p) {
       }
     }
 
-    return taxaTray + taxaCielo;
+    return { total: taxaTray + taxaCielo, tray: taxaTray, gateway: taxaCielo };
   }
 
   let taxaML;
+  let taxaTray = 0;         // só preenchido no canal Site
+  let taxaGateway = 0;      // só preenchido no canal Site
+  let taxaTrayReal = false; // true se o valor da Tray veio da API do Bling
   if (p.lojaId === SITE_ID && taxaCfg.taxasPagamento) {
-    // Canal Site: taxa Cielo por método de pagamento (Tray sem comissão variável)
-    taxaML = calcularTaxaSite();
+    // Canal Site: separamos Tray (plataforma) e Gateway (Cielo ou outro)
+    const breakdown = calcularTaxaSite();
+    taxaGateway = breakdown.gateway;  // Gateway sempre é estimado (Bling não sabe dessa taxa)
+
+    // Pra Tray, se a API trouxe o valor real usa ele; senão, usa nosso cálculo
+    if (apiTrouxeTaxa) {
+      taxaTray = p.taxaComissaoML;
+      taxaTrayReal = true;
+    } else {
+      taxaTray = breakdown.tray;
+      taxaTrayReal = false;
+    }
+    taxaML = taxaTray + taxaGateway;
   } else if (apiTrouxeTaxa) {
     // Pedido NOVO: API trouxe a comissão real → soma taxa fixa configurada (ex: R$ 5 Netshoes)
     const taxaFixa = (venda >= taxaCfg.minFixo && taxaCfg.fixo > 0) ? taxaCfg.fixo : 0;
@@ -1352,6 +1382,9 @@ function mapBlingPedido(p) {
     cmv,
     taxaML,
     taxaPct,
+    taxaTray,      // breakdown Site
+    taxaGateway,   // breakdown Site
+    taxaTrayReal,  // true se taxaTray veio da API do Bling
     frete,
     outrasDespesas,
     canal: p.canal || 'Outros',
@@ -1498,10 +1531,21 @@ function openModal(num) {
       <span class="brow-label">📦 CMV (Custo do Produto)</span>
       <span class="brow-val neg">– ${formatMoney(m.cmv)}</span>
     </div>
+    ${m.lojaId === '205389906' && (m.taxaTray > 0 || m.taxaGateway > 0) ? `
+    <div class="brow">
+      <span class="brow-label">🏬 Taxa Plataforma (Tray) ✓ real</span>
+      <span class="brow-val neg">– ${formatMoney(m.taxaTray || 0)}</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">💳 Taxa Gateway de pagamento${m.metodoPagamento ? ' ('+labelMetodo(m.metodoPagamento, m.bandeiraPagamento, m.numParcelas)+') ✓ real' : ' (método não identificado — est.)'}</span>
+      <span class="brow-val neg">– ${formatMoney(m.taxaGateway || 0)}</span>
+    </div>
+    ` : `
     <div class="brow">
       <span class="brow-label">🏪 Taxa ${m.canal || "Canal"} ${m.origemTaxa === 'real' ? '✓ real' : '('+( m.taxaPct || 0)+'% est.)'}</span>
       <span class="brow-val neg">– ${formatMoney(m.taxaML)}</span>
     </div>
+    `}
     <div class="brow">
       <span class="brow-label">🚚 Frete (custo vendedor)</span>
       <span class="brow-val neg">– ${formatMoney(m.frete)}</span>
