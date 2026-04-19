@@ -639,6 +639,61 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           Pedidos antigos sem comissão retornada pela API do Bling são calculados com a taxa legada de 28%.
         </div>
       </div>
+
+      <!-- CARD: Taxas Cielo por bandeira x método + Pix + Boleto + Tray -->
+      <div class="cfg-card" style="margin-top:14px;">
+        <div class="cfg-title">Site — Cielo (bandeira × método) + Tray</div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Tray — taxa sobre toda venda (%)</label>
+            <div class="iw"><span class="pre">%</span><input type="number" min="0" step="0.01" id="tp_tray_pct" /></div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Bandeira padrão (quando não identificar)</label>
+            <select id="tp_bandeira_padrao">
+              <option value="mastercard">Mastercard</option>
+              <option value="visa">Visa</option>
+              <option value="elo">Elo</option>
+              <option value="amex">Amex</option>
+              <option value="diners">Diners</option>
+              <option value="hipercard">Hipercard</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text3); margin-bottom:6px; text-transform:uppercase; letter-spacing:1.5px;">Pix & Boleto (taxas únicas)</div>
+        <table class="taxas-table" style="margin-bottom:18px;">
+          <thead><tr>
+            <th style="width:180px;">Método</th>
+            <th>Taxa (%)</th>
+            <th>Taxa fixa (R$)</th>
+          </tr></thead>
+          <tbody id="taxasSimplesBody"></tbody>
+        </table>
+
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text3); margin-bottom:6px; text-transform:uppercase; letter-spacing:1.5px;">Cartões (bandeira × método) — em %</div>
+        <div style="overflow-x:auto;">
+          <table class="taxas-table">
+            <thead><tr>
+              <th style="width:140px;">Bandeira</th>
+              <th>Débito</th>
+              <th>Crédito 1x</th>
+              <th>Crédito 2-6x</th>
+              <th>Crédito 7-12x</th>
+            </tr></thead>
+            <tbody id="taxasMatrizBody"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-cyan" onclick="salvarTaxasPagamento()">Salvar taxas de pagamento</button>
+          <button class="btn btn-ghost" onclick="resetTaxasPagamento()">Restaurar padrões</button>
+        </div>
+        <div class="nota">
+          <strong>Site (Tray + Cielo):</strong> a <strong>Tray</strong> cobra 1% sobre toda venda (acima); a <strong>Cielo</strong> cobra conforme o método e a bandeira do cartão. Quando a bandeira do pedido não for identificada, usa a bandeira padrão acima.
+        </div>
+      </div>
     </div>
 
   </div>
@@ -687,7 +742,50 @@ const TAXAS_CANAL = {
   '205401394': { pct: 12, fixo: 0,    minFixo: 0  }, // Amazon
   '206006851': { pct: 6,  fixo: 0,    minFixo: 0  }, // TikTok Shop
   '206029808': { pct: 14, fixo: 0,    minFixo: 0  }, // Shopee
-  '205389906': { pct: 3,  fixo: 0,    minFixo: 0  }, // Site
+  '205389906': {
+    pct: 1.00,  // Tray: 1% sobre todas as vendas
+    fixo: 0,
+    minFixo: 0,
+    // Taxas Cielo por bandeira × método (valores reais do painel Cielo 19/04/2026)
+    taxasPagamento: {
+      'pix':    { pct: 0.80, fixo: 0 },         // Pix: 0,80%
+      'boleto': { pct: 0,    fixo: 1.99 },      // Boleto: R$ 1,99 fixo por pedido
+      // Cartões: tabela por bandeira + faixa de parcelas
+      'debito': {
+        'visa':       { pct: 1.42, fixo: 0 },
+        'mastercard': { pct: 1.42, fixo: 0 },
+        'elo':        { pct: 1.97, fixo: 0 },
+        'amex':       { pct: 0,    fixo: 0 },  // Amex não opera débito
+        'diners':     { pct: 0,    fixo: 0 },  // Diners não opera débito
+        'hipercard':  { pct: 1.97, fixo: 0 },  // estimado, ajustável
+      },
+      'credito_1x': {
+        'visa':       { pct: 2.41, fixo: 0 },
+        'mastercard': { pct: 2.41, fixo: 0 },
+        'elo':        { pct: 2.96, fixo: 0 },
+        'amex':       { pct: 2.91, fixo: 0 },
+        'diners':     { pct: 2.41, fixo: 0 },
+        'hipercard':  { pct: 2.96, fixo: 0 },
+      },
+      'credito_2_6x': {
+        'visa':       { pct: 2.93, fixo: 0 },
+        'mastercard': { pct: 2.93, fixo: 0 },
+        'elo':        { pct: 3.58, fixo: 0 },
+        'amex':       { pct: 3.53, fixo: 0 },
+        'diners':     { pct: 2.93, fixo: 0 },
+        'hipercard':  { pct: 3.58, fixo: 0 },
+      },
+      'credito_7_12x': {
+        'visa':       { pct: 3.24, fixo: 0 },
+        'mastercard': { pct: 3.24, fixo: 0 },
+        'elo':        { pct: 3.89, fixo: 0 },
+        'amex':       { pct: 3.84, fixo: 0 },
+        'diners':     { pct: 3.24, fixo: 0 },
+        'hipercard':  { pct: 3.89, fixo: 0 },
+      },
+    },
+    bandeiraPadrao: 'mastercard',  // usada quando o pedido não identificar bandeira
+  }, // Site (Tray 1% + Cielo por bandeira)
   '203654110': { pct: 0,  fixo: 0,    minFixo: 0  }, // Parque do Povo
   '203777302': { pct: 0,  fixo: 0,    minFixo: 0  }, // Prudenshopping
 };
@@ -711,6 +809,7 @@ function init() {
   carregarTaxasCanal();
   applyConfigToForm();
   renderTaxasCanal();
+  renderTaxasPagamento();
 
   pedidosData = [];
   renderPedidos();
@@ -883,6 +982,126 @@ function carregarTaxasCanal() {
     }
   });
   Object.assign(TAXAS_CANAL, saved);
+  // Restaurar taxasPagamento salvas (agora inclui pct da Tray + bandeiraPadrao + tabela)
+  const savedPag = JSON.parse(localStorage.getItem('margemml_taxas_pagamento_site') || 'null');
+  if (savedPag && TAXAS_CANAL['205389906']) {
+    // Formato NOVO: { pct, bandeiraPadrao, taxasPagamento }
+    if (savedPag.taxasPagamento) {
+      TAXAS_CANAL['205389906'].pct = savedPag.pct ?? TAXAS_CANAL['205389906'].pct;
+      TAXAS_CANAL['205389906'].bandeiraPadrao = savedPag.bandeiraPadrao || TAXAS_CANAL['205389906'].bandeiraPadrao;
+      TAXAS_CANAL['205389906'].taxasPagamento = savedPag.taxasPagamento;
+    } else {
+      // Formato ANTIGO: objeto direto de taxas → mantém compat
+      TAXAS_CANAL['205389906'].taxasPagamento = savedPag;
+    }
+  }
+}
+
+// === Taxas por bandeira × método (canal Site — Cielo + Tray) ===
+const BANDEIRAS = [
+  { id: 'visa',       nome: 'Visa' },
+  { id: 'mastercard', nome: 'Mastercard' },
+  { id: 'elo',        nome: 'Elo' },
+  { id: 'amex',       nome: 'Amex' },
+  { id: 'diners',     nome: 'Diners' },
+  { id: 'hipercard',  nome: 'Hipercard' },
+];
+
+const METODOS_CARTAO = [
+  { id: 'debito',        label: 'Débito' },
+  { id: 'credito_1x',    label: 'Crédito 1x' },
+  { id: 'credito_2_6x',  label: 'Crédito 2-6x' },
+  { id: 'credito_7_12x', label: 'Crédito 7-12x' },
+];
+
+function renderTaxasPagamento() {
+  const siteCfg = TAXAS_CANAL['205389906'] || {};
+  const tp = siteCfg.taxasPagamento || {};
+
+  // 1) Tray + bandeira padrão
+  const inpTray = document.getElementById('tp_tray_pct');
+  if (inpTray) inpTray.value = siteCfg.pct ?? 1;
+  const selBand = document.getElementById('tp_bandeira_padrao');
+  if (selBand) selBand.value = siteCfg.bandeiraPadrao || 'mastercard';
+
+  // 2) Pix + Boleto (taxas únicas)
+  const simples = [
+    { id: 'pix',    nome: '⚡ Pix' },
+    { id: 'boleto', nome: '📄 Boleto' },
+  ];
+  const bodySimples = document.getElementById('taxasSimplesBody');
+  if (bodySimples) {
+    bodySimples.innerHTML = simples.map(m => {
+      const cfg = tp[m.id] || { pct: 0, fixo: 0 };
+      return `<tr>
+        <td style="color:var(--text);">${m.nome}</td>
+        <td><input type="number" min="0" max="30" step="0.01" value="${cfg.pct || 0}" id="tp_s_pct_${m.id}" /></td>
+        <td><input type="number" min="0" step="0.01" value="${cfg.fixo || 0}" id="tp_s_fixo_${m.id}" /></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 3) Matriz bandeira × método cartão
+  const bodyMatriz = document.getElementById('taxasMatrizBody');
+  if (bodyMatriz) {
+    bodyMatriz.innerHTML = BANDEIRAS.map(b => {
+      const cels = METODOS_CARTAO.map(m => {
+        const cfg = tp[m.id]?.[b.id] || { pct: 0 };
+        return `<td><input type="number" min="0" max="30" step="0.01" value="${cfg.pct || 0}" id="tp_m_${m.id}_${b.id}" /></td>`;
+      }).join('');
+      return `<tr><td style="color:var(--text);">${b.nome}</td>${cels}</tr>`;
+    }).join('');
+  }
+}
+
+function salvarTaxasPagamento() {
+  const siteCfg = TAXAS_CANAL['205389906'];
+  if (!siteCfg) return;
+
+  // Tray + padrão
+  const inpTray = document.getElementById('tp_tray_pct');
+  if (inpTray) siteCfg.pct = +inpTray.value || 0;
+  const selBand = document.getElementById('tp_bandeira_padrao');
+  if (selBand) siteCfg.bandeiraPadrao = selBand.value;
+
+  const novaTP = {};
+
+  // Pix/Boleto
+  ['pix', 'boleto'].forEach(id => {
+    const pct = document.getElementById('tp_s_pct_' + id);
+    const fixo = document.getElementById('tp_s_fixo_' + id);
+    novaTP[id] = {
+      pct: pct ? (+pct.value || 0) : 0,
+      fixo: fixo ? (+fixo.value || 0) : 0,
+    };
+  });
+
+  // Matriz cartões
+  METODOS_CARTAO.forEach(m => {
+    novaTP[m.id] = {};
+    BANDEIRAS.forEach(b => {
+      const inp = document.getElementById(`tp_m_${m.id}_${b.id}`);
+      novaTP[m.id][b.id] = {
+        pct: inp ? (+inp.value || 0) : 0,
+        fixo: 0,
+      };
+    });
+  });
+
+  siteCfg.taxasPagamento = novaTP;
+
+  // Persiste tudo junto (pct da Tray + bandeiraPadrao + tabela completa)
+  localStorage.setItem('margemml_taxas_pagamento_site', JSON.stringify({
+    pct: siteCfg.pct,
+    bandeiraPadrao: siteCfg.bandeiraPadrao,
+    taxasPagamento: novaTP,
+  }));
+  alert('✅ Taxas de pagamento salvas! Margens do canal Site serão recalculadas na próxima sincronização.');
+}
+
+function resetTaxasPagamento() {
+  localStorage.removeItem('margemml_taxas_pagamento_site');
+  location.reload();
 }
 
 async function testarConexao() {
@@ -1027,10 +1246,43 @@ function mapBlingPedido(p) {
   const taxaCfg = getTaxaCanal(p.lojaId || '');
   const taxaPct = taxaCfg.pct;
   const NETSHOES_ID = '205397393';
+  const SITE_ID = '205389906';
   const LEGADO_NETSHOES_PCT = 28; // taxa antiga aplicada a pedidos sem comissão retornada pela API
   const apiTrouxeTaxa = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined);
+
+  // Helper: calcula taxa pro canal Site (Tray + Cielo por bandeira/método)
+  function calcularTaxaSite() {
+    const tp = taxaCfg.taxasPagamento || {};
+    const metodo = p.metodoPagamento;
+    const bandeira = p.bandeiraPagamento || taxaCfg.bandeiraPadrao || 'mastercard';
+
+    // Tray sempre aplica sobre qualquer venda do site
+    const taxaTray = venda * (taxaCfg.pct || 0) / 100;
+
+    // Taxa Cielo depende do método
+    let taxaCielo = 0;
+    if (metodo && tp[metodo]) {
+      const cfg = tp[metodo];
+      // Pix/boleto têm taxa única (não por bandeira)
+      if (cfg.pct !== undefined || cfg.fixo !== undefined) {
+        taxaCielo = (venda * (cfg.pct || 0) / 100) + (cfg.fixo || 0);
+      } else {
+        // Cartões: escolhe bandeira
+        const cfgBandeira = cfg[bandeira] || cfg[taxaCfg.bandeiraPadrao || 'mastercard'];
+        if (cfgBandeira) {
+          taxaCielo = (venda * (cfgBandeira.pct || 0) / 100) + (cfgBandeira.fixo || 0);
+        }
+      }
+    }
+
+    return taxaTray + taxaCielo;
+  }
+
   let taxaML;
-  if (apiTrouxeTaxa) {
+  if (p.lojaId === SITE_ID && taxaCfg.taxasPagamento) {
+    // Canal Site: taxa Cielo por método de pagamento (Tray sem comissão variável)
+    taxaML = calcularTaxaSite();
+  } else if (apiTrouxeTaxa) {
     // Pedido NOVO: API trouxe a comissão real → soma taxa fixa configurada (ex: R$ 5 Netshoes)
     const taxaFixa = (venda >= taxaCfg.minFixo && taxaCfg.fixo > 0) ? taxaCfg.fixo : 0;
     taxaML = p.taxaComissaoML + taxaFixa;
@@ -1061,6 +1313,9 @@ function mapBlingPedido(p) {
     outrasDespesas,
     canal: p.canal || 'Outros',
     lojaId: p.lojaId || '',
+    metodoPagamento: p.metodoPagamento || null,
+    numParcelas: p.numParcelas || 1,
+    bandeiraPagamento: p.bandeiraPagamento || null,
     origemTaxa: (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined) ? 'real' : 'estimada',
     origem: 'bling',
   };
