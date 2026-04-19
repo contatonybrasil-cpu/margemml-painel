@@ -621,12 +621,22 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
       <div class="cfg-card">
         <div class="cfg-title">Comissões</div>
         <table class="taxas-table">
-          <thead><tr><th>Canal</th><th>Taxa (%)</th><th>Tipo</th></tr></thead>
+          <thead><tr>
+            <th>Canal</th>
+            <th>Comissão (%)</th>
+            <th>Taxa fixa (R$)</th>
+            <th>Pedido mín. (R$)</th>
+            <th>Tipo</th>
+          </tr></thead>
           <tbody id="taxasCanalBody"></tbody>
         </table>
         <div style="display:flex;gap:8px;margin-top:16px;">
           <button class="btn btn-cyan" onclick="salvarTaxasCanal()">Salvar taxas</button>
           <button class="btn btn-ghost" onclick="resetTaxasCanal()">Restaurar padrões</button>
+        </div>
+        <div class="nota">
+          <strong>Netshoes:</strong> comissão de 20% + taxa fixa de R$ 5,00 para pedidos ≥ R$ 10,00 (contrato vigente 06/03/2026).<br>
+          Pedidos antigos sem comissão retornada pela API do Bling são calculados com a taxa legada de 28%.
         </div>
       </div>
     </div>
@@ -669,16 +679,17 @@ const DEFAULT_CONFIG = {
   freteComprador: 0,
 };
 
+// Estrutura: { pct: comissão %, fixo: taxa fixa R$, minFixo: valor mínimo do pedido pra aplicar taxa fixa }
 const TAXAS_CANAL = {
-  '203628722': 14,
-  '203953121': 14,
-  '205397393': 16,
-  '205401394': 12,
-  '206006851': 6,
-  '206029808': 14,
-  '205389906': 3,
-  '203654110': 0,
-  '203777302': 0,
+  '203628722': { pct: 14, fixo: 0,    minFixo: 0  }, // Mercado Livre
+  '203953121': { pct: 14, fixo: 0,    minFixo: 0  }, // Magalu
+  '205397393': { pct: 20, fixo: 5.00, minFixo: 10 }, // Netshoes — 20% + R$5 (contrato vigente)
+  '205401394': { pct: 12, fixo: 0,    minFixo: 0  }, // Amazon
+  '206006851': { pct: 6,  fixo: 0,    minFixo: 0  }, // TikTok Shop
+  '206029808': { pct: 14, fixo: 0,    minFixo: 0  }, // Shopee
+  '205389906': { pct: 3,  fixo: 0,    minFixo: 0  }, // Site
+  '203654110': { pct: 0,  fixo: 0,    minFixo: 0  }, // Parque do Povo
+  '203777302': { pct: 0,  fixo: 0,    minFixo: 0  }, // Prudenshopping
 };
 
 const CANAIS_CONFIG = [
@@ -823,15 +834,16 @@ function updateStatus(connected) {
 }
 
 function renderTaxasCanal() {
-  const saved = JSON.parse(localStorage.getItem('margemml_taxas_canal') || '{}');
   const body = document.getElementById('taxasCanalBody');
   if (!body) return;
   body.innerHTML = CANAIS_CONFIG.map(c => {
-    const taxa = saved[c.id] !== undefined ? saved[c.id] : TAXAS_CANAL[c.id];
+    const t = TAXAS_CANAL[c.id] || { pct: 0, fixo: 0, minFixo: 0 };
     const disabled = c.tipo === 'Loja Física' ? 'readonly style="opacity:0.4;"' : '';
     return `<tr>
       <td style="color:var(--text);">${c.nome}</td>
-      <td><input type="number" min="0" max="30" step="0.1" value="${taxa}" ${disabled} id="taxa_${c.id}" /></td>
+      <td><input type="number" min="0" max="30" step="0.1" value="${t.pct}" ${disabled} id="taxa_pct_${c.id}" /></td>
+      <td><input type="number" min="0" step="0.01" value="${t.fixo}" ${disabled} id="taxa_fixo_${c.id}" /></td>
+      <td><input type="number" min="0" step="0.01" value="${t.minFixo}" ${disabled} id="taxa_min_${c.id}" /></td>
       <td><span class="chip ${c.tipo === 'Loja Física' ? 'chip-ok' : c.tipo === 'Gateway' ? 'chip-warn' : 'chip-ok'}">${c.tipo}</span></td>
     </tr>`;
   }).join('');
@@ -840,8 +852,16 @@ function renderTaxasCanal() {
 function salvarTaxasCanal() {
   const saved = {};
   CANAIS_CONFIG.forEach(c => {
-    const el = document.getElementById('taxa_' + c.id);
-    if (el) saved[c.id] = +el.value;
+    const pct = document.getElementById('taxa_pct_' + c.id);
+    const fixo = document.getElementById('taxa_fixo_' + c.id);
+    const min = document.getElementById('taxa_min_' + c.id);
+    if (pct) {
+      saved[c.id] = {
+        pct: +pct.value || 0,
+        fixo: fixo ? (+fixo.value || 0) : 0,
+        minFixo: min ? (+min.value || 0) : 0
+      };
+    }
   });
   localStorage.setItem('margemml_taxas_canal', JSON.stringify(saved));
   Object.assign(TAXAS_CANAL, saved);
@@ -850,11 +870,18 @@ function salvarTaxasCanal() {
 
 function resetTaxasCanal() {
   localStorage.removeItem('margemml_taxas_canal');
-  renderTaxasCanal();
+  // Recarrega os defaults do código
+  location.reload();
 }
 
 function carregarTaxasCanal() {
   const saved = JSON.parse(localStorage.getItem('margemml_taxas_canal') || '{}');
+  // Migração: se algum canal estiver no formato antigo (number), converte pra {pct, fixo, minFixo}
+  Object.keys(saved).forEach(id => {
+    if (typeof saved[id] === 'number') {
+      saved[id] = { pct: saved[id], fixo: 0, minFixo: 0 };
+    }
+  });
   Object.assign(TAXAS_CANAL, saved);
 }
 
@@ -952,7 +979,14 @@ async function loadPedidos() {
 
 function getTaxaCanal(lojaId) {
   if (TAXAS_CANAL[lojaId] !== undefined) return TAXAS_CANAL[lojaId];
-  return config.taxaMLPadrao;
+  return { pct: config.taxaMLPadrao, fixo: 0, minFixo: 0 };
+}
+
+function calcularTaxaCanal(lojaId, venda) {
+  const t = getTaxaCanal(lojaId);
+  const comissao = venda * t.pct / 100;
+  const fixo = (venda >= t.minFixo && t.fixo > 0) ? t.fixo : 0;
+  return comissao + fixo;
 }
 
 function mapBlingPedido(p) {
@@ -964,10 +998,24 @@ function mapBlingPedido(p) {
   const cmvItens = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
   const cmv = cmvReal || (cmvItens > 0 ? cmvItens : null);
 
-  const taxaPct = getTaxaCanal(p.lojaId || '');
-  const taxaML = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined)
-    ? p.taxaComissaoML
-    : venda * taxaPct / 100;
+  const taxaCfg = getTaxaCanal(p.lojaId || '');
+  const taxaPct = taxaCfg.pct;
+  const NETSHOES_ID = '205397393';
+  const LEGADO_NETSHOES_PCT = 28; // taxa antiga aplicada a pedidos sem comissão retornada pela API
+  const apiTrouxeTaxa = (p.taxaComissaoML !== null && p.taxaComissaoML !== undefined);
+  let taxaML;
+  if (apiTrouxeTaxa) {
+    // Pedido NOVO: API trouxe a comissão real → soma taxa fixa configurada (ex: R$ 5 Netshoes)
+    const taxaFixa = (venda >= taxaCfg.minFixo && taxaCfg.fixo > 0) ? taxaCfg.fixo : 0;
+    taxaML = p.taxaComissaoML + taxaFixa;
+  } else if (p.lojaId === NETSHOES_ID) {
+    // Pedido ANTIGO Netshoes: API não trouxe → aplica 28% legado, SEM taxa fixa
+    taxaML = venda * LEGADO_NETSHOES_PCT / 100;
+  } else {
+    // Outros canais sem taxa na API: fallback normal (pct + fixa configurados)
+    const taxaFixa = (venda >= taxaCfg.minFixo && taxaCfg.fixo > 0) ? taxaCfg.fixo : 0;
+    taxaML = (venda * taxaPct / 100) + taxaFixa;
+  }
 
   const frete = (p.custoFreteML !== null && p.custoFreteML !== undefined)
     ? p.custoFreteML
