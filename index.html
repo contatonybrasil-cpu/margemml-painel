@@ -390,10 +390,73 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 .alert-warn    { background:rgba(255,124,42,0.08); border:1px solid rgba(255,124,42,0.2); color:var(--orange); }
 .nota { background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:6px; padding:12px 14px; font-size:11px; color:var(--cyan); line-height:1.6; margin-top:12px; font-family:var(--mono); }
 
+/* === Calculadora === */
+.calc-mode-btn, .calc-view-btn {
+  background:transparent; border:none;
+  padding:8px 16px; font-size:12px; font-weight:600;
+  color:var(--text2); cursor:pointer; border-radius:4px;
+  font-family:var(--font); transition:all 0.15s;
+  letter-spacing:0.3px;
+}
+.calc-mode-btn:hover, .calc-view-btn:hover { color:var(--text); }
+.calc-mode-btn.active, .calc-view-btn.active {
+  background:linear-gradient(135deg, var(--cyan), var(--purple));
+  color:var(--bg);
+  box-shadow:0 2px 8px rgba(0,212,255,0.2);
+}
+
+.calc-breakdown {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid rgba(30,45,69,0.6);
+  font-size:12px; font-family:var(--mono);
+}
+.calc-breakdown:last-child { border-bottom:none; }
+.calc-breakdown-label { color:var(--text3); font-size:11px; }
+.calc-breakdown-val { font-size:12px; }
+.calc-breakdown-val.pos { color:var(--green); }
+.calc-breakdown-val.neg { color:var(--pink); }
+.calc-breakdown-val.warn { color:var(--orange); }
+.calc-breakdown-val.hi { color:var(--text); font-weight:600; }
+
+.calc-hero {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  margin-bottom:16px;
+}
+.calc-hero-card {
+  padding:18px 20px; border-radius:8px;
+  background:linear-gradient(135deg, rgba(0,212,255,0.08), rgba(155,114,255,0.08));
+  border:1px solid var(--border2);
+}
+.calc-hero-label {
+  font-family:var(--mono); font-size:10px;
+  color:var(--text3); letter-spacing:1.5px;
+  text-transform:uppercase; margin-bottom:8px;
+}
+.calc-hero-value {
+  font-size:28px; font-weight:800; letter-spacing:-0.5px;
+  line-height:1;
+}
+
+.calc-compare-table { width:100%; border-collapse:collapse; font-size:12px; }
+.calc-compare-table th {
+  background:var(--bg2); padding:11px 12px; text-align:left;
+  font-family:var(--mono); font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--text3);
+  border-bottom:1px solid var(--border); font-weight:400;
+}
+.calc-compare-table td {
+  padding:10px 12px; font-family:var(--mono);
+  border-bottom:1px solid rgba(30,45,69,0.4);
+  font-size:11.5px;
+}
+.calc-compare-table td.hi { color:var(--text); font-weight:600; }
+.calc-compare-table tr:hover td { background:rgba(0,212,255,0.02); }
+
 @media(max-width:900px) {
   .sidebar { display:none; }
   .kpi-grid { grid-template-columns:repeat(2,1fr); }
   .cfg-grid { grid-template-columns:1fr; }
+  .calc-hero { grid-template-columns:1fr; }
   .section { padding:16px; }
   header { padding:0 16px; }
 }
@@ -408,6 +471,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
   </div>
   <div class="nav">
     <div class="nav-item active" onclick="showTab('pedidos')">Pedidos</div>
+    <div class="nav-item" onclick="showTab('calculadora')">Calculadora</div>
     <div class="nav-item" onclick="showTab('config')">Configurações</div>
     <div class="nav-item" onclick="showTab('taxas')">Taxas</div>
   </div>
@@ -562,6 +626,107 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <span id="paginationInfo"></span>
           <div class="page-btns" id="pageBtns"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="section" id="tab-calculadora">
+      <div style="margin-bottom:20px;">
+        <div class="page-title">Calculadora de Margem</div>
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px;">Simule o preço de venda ou a margem antes de cadastrar o produto</div>
+      </div>
+
+      <!-- CARD: Seletor de modo -->
+      <div class="cfg-card" style="margin-bottom:14px;">
+        <div style="display:flex;gap:0;background:var(--bg2);border-radius:6px;padding:4px;border:1px solid var(--border);width:fit-content;">
+          <button class="calc-mode-btn active" id="calc-mode-preco" onclick="setCalcModo('preco')">💰 Definir preço</button>
+          <button class="calc-mode-btn" id="calc-mode-margem" onclick="setCalcModo('margem')">📊 Simular margem</button>
+        </div>
+        <div style="display:flex;gap:0;background:var(--bg2);border-radius:6px;padding:4px;border:1px solid var(--border);width:fit-content;margin-top:12px;">
+          <button class="calc-view-btn active" id="calc-view-unico" onclick="setCalcView('unico')">🎯 Canal único</button>
+          <button class="calc-view-btn" id="calc-view-compara" onclick="setCalcView('compara')">⚖️ Comparativo</button>
+        </div>
+      </div>
+
+      <!-- CARD: Inputs -->
+      <div class="cfg-card" style="margin-bottom:14px;">
+        <div class="cfg-title">Dados do produto</div>
+        <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="field">
+            <label>CMV — Custo do produto (R$)</label>
+            <div class="iw"><span class="pre">R$</span><input type="number" id="calc-cmv" value="50" min="0" step="0.01" oninput="calcularResultado()"/></div>
+          </div>
+
+          <div class="field" id="calc-campo-margem">
+            <label>Margem desejada (%)</label>
+            <div class="iw"><span class="pre">%</span><input type="number" id="calc-margem-alvo" value="20" min="-100" step="0.1" oninput="calcularResultado()"/></div>
+          </div>
+
+          <div class="field" id="calc-campo-preco" style="display:none;">
+            <label>Preço de venda (R$)</label>
+            <div class="iw"><span class="pre">R$</span><input type="number" id="calc-preco" value="100" min="0" step="0.01" oninput="calcularResultado()"/></div>
+          </div>
+
+          <div class="field" id="calc-campo-canal">
+            <label>Canal de venda</label>
+            <select id="calc-canal" onchange="calcularResultado()">
+              <option value="203628722">🛒 Mercado Livre</option>
+              <option value="203953121">🛍️ Magalu</option>
+              <option value="205397393">👟 Netshoes</option>
+              <option value="205401394">📦 Amazon</option>
+              <option value="206006851">🎵 TikTok Shop</option>
+              <option value="206029808">🛒 Shopee</option>
+              <option value="205389906">🌐 Site</option>
+              <option value="203654110">🏪 Parque do Povo</option>
+              <option value="203777302">🏬 Prudenshopping</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="field">
+            <label>Frete (R$)</label>
+            <div class="iw"><span class="pre">R$</span><input type="number" id="calc-frete" value="0" min="0" step="0.01" oninput="calcularResultado()"/></div>
+          </div>
+
+          <div class="field">
+            <label>Quem paga o frete?</label>
+            <select id="calc-frete-quem" onchange="calcularResultado()">
+              <option value="vendedor">Vendedor (custo meu)</option>
+              <option value="comprador">Comprador</option>
+            </select>
+          </div>
+
+          <div class="field" id="calc-campo-metodo" style="display:none;">
+            <label>Método de pagamento (Site)</label>
+            <select id="calc-metodo" onchange="calcularResultado()">
+              <option value="pix">⚡ Pix</option>
+              <option value="boleto">📄 Boleto</option>
+              <option value="debito">💳 Débito</option>
+              <option value="credito_1x">💳 Crédito 1x</option>
+              <option value="credito_2_6x" selected>💳 Crédito 2-6x</option>
+              <option value="credito_7_12x">💳 Crédito 7-12x</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:8px;padding:8px 12px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);">
+          ℹ️ Custos fixos aplicados automaticamente: Embalagem <strong id="calc-info-emb" style="color:var(--cyan);">R$ 0</strong>
+          · Operacional <strong id="calc-info-op" style="color:var(--cyan);">R$ 0</strong>
+          · Simples Nacional <strong id="calc-info-sn" style="color:var(--cyan);">0%</strong>
+          <span style="margin-left:8px;color:var(--text3);">(configure na aba <a href="#" onclick="showTab('config');return false;" style="color:var(--cyan);text-decoration:underline;">Configurações</a>)</span>
+        </div>
+      </div>
+
+      <!-- CARD: Resultado (visão única) -->
+      <div id="calc-resultado-unico" class="cfg-card" style="margin-bottom:14px;">
+        <div class="cfg-title">Resultado</div>
+        <div id="calc-resultado-content"></div>
+      </div>
+
+      <!-- CARD: Resultado (comparativo) -->
+      <div id="calc-resultado-compara" class="cfg-card" style="margin-bottom:14px;display:none;">
+        <div class="cfg-title">Comparativo de canais</div>
+        <div id="calc-compara-content"></div>
       </div>
     </div>
 
@@ -918,7 +1083,7 @@ function labelMetodo(metodo, bandeira, numParcelas) {
 
 function showTab(name) {
   document.querySelectorAll('.nav-item').forEach((t,i) => {
-    t.classList.toggle('active', ['pedidos','config','taxas'][i] === name);
+    t.classList.toggle('active', ['pedidos','calculadora','config','taxas'][i] === name);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
@@ -1818,6 +1983,358 @@ function exportarPDF() {
   win.print();
 }
 
+// ============================================================
+// ==================== CALCULADORA ===========================
+// ============================================================
+
+let calcModo = 'preco';   // 'preco' (custo → preço) ou 'margem' (preço → margem)
+let calcView = 'unico';   // 'unico' ou 'compara'
+
+const NOMES_CANAL = {
+  '203628722': '🛒 Mercado Livre',
+  '203953121': '🛍️ Magalu',
+  '205397393': '👟 Netshoes',
+  '205401394': '📦 Amazon',
+  '206006851': '🎵 TikTok Shop',
+  '206029808': '🛒 Shopee',
+  '205389906': '🌐 Site',
+  '203654110': '🏪 Parque do Povo',
+  '203777302': '🏬 Prudenshopping',
+};
+
+function setCalcModo(modo) {
+  calcModo = modo;
+  document.getElementById('calc-mode-preco').classList.toggle('active', modo === 'preco');
+  document.getElementById('calc-mode-margem').classList.toggle('active', modo === 'margem');
+
+  // Mostra/esconde campos
+  document.getElementById('calc-campo-margem').style.display = modo === 'preco' ? '' : 'none';
+  document.getElementById('calc-campo-preco').style.display = modo === 'margem' ? '' : 'none';
+
+  calcularResultado();
+}
+
+function setCalcView(view) {
+  calcView = view;
+  document.getElementById('calc-view-unico').classList.toggle('active', view === 'unico');
+  document.getElementById('calc-view-compara').classList.toggle('active', view === 'compara');
+
+  document.getElementById('calc-resultado-unico').style.display = view === 'unico' ? '' : 'none';
+  document.getElementById('calc-resultado-compara').style.display = view === 'compara' ? '' : 'none';
+
+  // Esconde o seletor de canal único quando está em modo comparativo
+  document.getElementById('calc-campo-canal').style.display = view === 'unico' ? '' : 'none';
+
+  calcularResultado();
+}
+
+// Atualiza o aviso dos custos fixos (embalagem, operacional, SN)
+function atualizarInfoFixos() {
+  const elEmb = document.getElementById('calc-info-emb');
+  const elOp = document.getElementById('calc-info-op');
+  const elSn = document.getElementById('calc-info-sn');
+  if (elEmb) elEmb.textContent = formatMoney(config.custoEmbalagem || 0);
+  if (elOp) elOp.textContent = formatMoney(config.custoOperacional || 0);
+  if (elSn) elSn.textContent = (config.aliquotaSN || 0) + '%';
+}
+
+// Mostra/esconde campo de método de pagamento se o canal for Site
+function atualizarCampoMetodo() {
+  const canal = document.getElementById('calc-canal')?.value;
+  const campoMetodo = document.getElementById('calc-campo-metodo');
+  if (campoMetodo) {
+    campoMetodo.style.display = (canal === '205389906' && calcView === 'unico') ? '' : 'none';
+  }
+}
+
+// Calcula a taxa do canal considerando método de pagamento se for o Site
+function calcularTaxaCanalCompleta(lojaId, venda, metodo) {
+  const taxaCfg = TAXAS_CANAL[lojaId] || { pct: config.taxaMLPadrao || 12, fixo: 0, minFixo: 0 };
+  const SITE_ID = '205389906';
+
+  if (lojaId === SITE_ID && taxaCfg.taxasPagamento) {
+    const tp = taxaCfg.taxasPagamento;
+    const bandeira = taxaCfg.bandeiraPadrao || 'mastercard';
+    const taxaTray = venda * (taxaCfg.pct || 0) / 100;
+    let taxaCielo = 0;
+    const metodoFinal = metodo || 'credito_2_6x';
+    if (tp[metodoFinal]) {
+      const cfg = tp[metodoFinal];
+      if (cfg.pct !== undefined || cfg.fixo !== undefined) {
+        taxaCielo = (venda * (cfg.pct || 0) / 100) + (cfg.fixo || 0);
+      } else {
+        const cfgBandeira = cfg[bandeira];
+        if (cfgBandeira) {
+          taxaCielo = (venda * (cfgBandeira.pct || 0) / 100) + (cfgBandeira.fixo || 0);
+        }
+      }
+    }
+    return { total: taxaTray + taxaCielo, tray: taxaTray, gateway: taxaCielo, pct: taxaCfg.pct, isSite: true };
+  } else {
+    const comissao = venda * (taxaCfg.pct || 0) / 100;
+    const fixo = (venda >= (taxaCfg.minFixo || 0) && (taxaCfg.fixo || 0) > 0) ? taxaCfg.fixo : 0;
+    return { total: comissao + fixo, tray: 0, gateway: 0, pct: taxaCfg.pct, fixo, isSite: false };
+  }
+}
+
+// Dado um preço de venda, calcula todos os custos e o lucro/margem
+function simularPreco(preco, cmv, lojaId, freteValor, freteQuem, metodo) {
+  const emb = +config.custoEmbalagem || 0;
+  const op = +config.custoOperacional || 0;
+  const aliquotaSN = +config.aliquotaSN || 0;
+
+  const freteVendedor = freteQuem === 'vendedor' ? freteValor : 0;
+  const freteComprador = freteQuem === 'comprador' ? freteValor : 0;
+
+  const taxa = calcularTaxaCanalCompleta(lojaId, preco, metodo);
+  const imposto = preco * aliquotaSN / 100;
+
+  const receita = preco + freteComprador; // se comprador paga o frete, ele soma à receita
+  const custoTotal = cmv + taxa.total + freteVendedor + emb + op + imposto;
+  const lucro = receita - custoTotal;
+  const margem = preco > 0 ? (lucro / preco) * 100 : 0;
+
+  return {
+    preco, cmv, taxa, imposto, emb, op, freteVendedor, freteComprador,
+    custoTotal, lucro, margem
+  };
+}
+
+// Dado um CMV e margem desejada, encontra o preço de venda necessário
+// Usa método iterativo (bisseção) já que taxas têm partes fixas
+function encontrarPrecoPorMargem(cmv, margemDesejada, lojaId, freteValor, freteQuem, metodo) {
+  // Margem = (preco + freteComprador - cmv - taxa - freteVendedor - emb - op - preco*aliq/100) / preco * 100
+  // Iteração: começa com chute e ajusta até convergir
+
+  // Limite de busca: preço entre CMV e CMV * 20
+  let lo = 0.01;
+  let hi = Math.max(cmv * 20, 100);
+
+  // Se margem desejada for negativa, permite preço abaixo do custo
+  if (margemDesejada < 0) {
+    lo = 0.01;
+  }
+
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    const r = simularPreco(mid, cmv, lojaId, freteValor, freteQuem, metodo);
+    if (Math.abs(r.margem - margemDesejada) < 0.01) {
+      return r;
+    }
+    if (r.margem < margemDesejada) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  // Retorna o último resultado mesmo sem convergir (caso extremo)
+  return simularPreco((lo + hi) / 2, cmv, lojaId, freteValor, freteQuem, metodo);
+}
+
+function calcularResultado() {
+  atualizarInfoFixos();
+  atualizarCampoMetodo();
+
+  const cmv = +document.getElementById('calc-cmv').value || 0;
+  const freteValor = +document.getElementById('calc-frete').value || 0;
+  const freteQuem = document.getElementById('calc-frete-quem').value;
+  const metodo = document.getElementById('calc-metodo')?.value || 'credito_2_6x';
+
+  if (calcView === 'unico') {
+    const lojaId = document.getElementById('calc-canal').value;
+    let r;
+
+    if (calcModo === 'preco') {
+      // Modo: custo + margem desejada → preço
+      const margemAlvo = +document.getElementById('calc-margem-alvo').value || 0;
+      r = encontrarPrecoPorMargem(cmv, margemAlvo, lojaId, freteValor, freteQuem, metodo);
+    } else {
+      // Modo: preço → margem
+      const preco = +document.getElementById('calc-preco').value || 0;
+      r = simularPreco(preco, cmv, lojaId, freteValor, freteQuem, metodo);
+    }
+
+    renderResultadoUnico(r, lojaId);
+  } else {
+    // Comparativo: todos os canais
+    renderResultadoComparativo(cmv, freteValor, freteQuem);
+  }
+}
+
+function renderResultadoUnico(r, lojaId) {
+  const cor = r.margem < (config.margemMin || 5) ? 'var(--pink)'
+            : r.margem >= (config.margemAlvo || 15) ? 'var(--green)'
+            : 'var(--orange)';
+  const lucroCor = r.lucro >= 0 ? 'var(--green)' : 'var(--pink)';
+
+  const taxaLabel = r.taxa.isSite
+    ? `Taxa Canal (Tray + Gateway)`
+    : `Taxa ${NOMES_CANAL[lojaId] || 'Canal'} (${(r.taxa.pct || 0).toLocaleString('pt-BR',{minimumFractionDigits:1, maximumFractionDigits:2})}%)`;
+
+  let taxaBreakdown = '';
+  if (r.taxa.isSite) {
+    taxaBreakdown = `
+      <div class="calc-breakdown" style="padding-left:24px;">
+        <span class="calc-breakdown-label">└ Tray (${(r.taxa.pct || 0)}%)</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.taxa.tray)}</span>
+      </div>
+      <div class="calc-breakdown" style="padding-left:24px;">
+        <span class="calc-breakdown-label">└ Gateway Cielo</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.taxa.gateway)}</span>
+      </div>`;
+  }
+
+  const freteBreakdown = r.freteVendedor > 0 ? `
+    <div class="calc-breakdown">
+      <span class="calc-breakdown-label">🚚 Frete (pago pelo vendedor)</span>
+      <span class="calc-breakdown-val neg">– ${formatMoney(r.freteVendedor)}</span>
+    </div>` : r.freteComprador > 0 ? `
+    <div class="calc-breakdown">
+      <span class="calc-breakdown-label">🚚 Frete (pago pelo comprador, soma à receita)</span>
+      <span class="calc-breakdown-val pos">+ ${formatMoney(r.freteComprador)}</span>
+    </div>` : '';
+
+  document.getElementById('calc-resultado-content').innerHTML = `
+    <div class="calc-hero">
+      <div class="calc-hero-card">
+        <div class="calc-hero-label">💰 Preço de venda ideal</div>
+        <div class="calc-hero-value" style="color:var(--cyan);">${formatMoney(r.preco)}</div>
+      </div>
+      <div class="calc-hero-card">
+        <div class="calc-hero-label">📊 Margem líquida</div>
+        <div class="calc-hero-value" style="color:${cor};">${formatPct(r.margem)}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="padding:12px 14px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">Lucro líquido</div>
+        <div style="font-size:20px;font-weight:700;color:${lucroCor};margin-top:4px;">${formatMoney(r.lucro)}</div>
+      </div>
+      <div style="padding:12px 14px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">Markup sobre custo</div>
+        <div style="font-size:20px;font-weight:700;color:var(--purple);margin-top:4px;">${r.cmv > 0 ? ((r.preco / r.cmv - 1) * 100).toFixed(1) : '0'}%</div>
+      </div>
+    </div>
+
+    <div style="margin-top:8px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Detalhamento</div>
+
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">🛒 Receita de venda</span>
+        <span class="calc-breakdown-val pos hi">${formatMoney(r.preco)}</span>
+      </div>
+      ${r.freteComprador > 0 ? `<div class="calc-breakdown">
+        <span class="calc-breakdown-label">+ Frete pago pelo comprador</span>
+        <span class="calc-breakdown-val pos">+ ${formatMoney(r.freteComprador)}</span>
+      </div>` : ''}
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">📦 CMV — Custo do produto</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.cmv)}</span>
+      </div>
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">🏪 ${taxaLabel}</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.taxa.total)}</span>
+      </div>
+      ${taxaBreakdown}
+      ${r.freteVendedor > 0 ? `<div class="calc-breakdown">
+        <span class="calc-breakdown-label">🚚 Frete (custo vendedor)</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.freteVendedor)}</span>
+      </div>` : ''}
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">📦 Embalagem</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.emb)}</span>
+      </div>
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">⚙️ Custo operacional</span>
+        <span class="calc-breakdown-val neg">– ${formatMoney(r.op)}</span>
+      </div>
+      <div class="calc-breakdown">
+        <span class="calc-breakdown-label">🧾 Simples Nacional (${config.aliquotaSN}%)</span>
+        <span class="calc-breakdown-val warn">– ${formatMoney(r.imposto)}</span>
+      </div>
+      <div class="calc-breakdown" style="border-top:1px solid var(--border2);margin-top:4px;padding-top:12px;">
+        <span class="calc-breakdown-label" style="font-weight:700;color:var(--text);">💰 Lucro líquido</span>
+        <span class="calc-breakdown-val hi" style="color:${lucroCor};font-size:14px;">${formatMoney(r.lucro)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderResultadoComparativo(cmv, freteValor, freteQuem) {
+  const canaisOrdem = ['203628722','203953121','205397393','205401394','206006851','206029808','205389906','203654110','203777302'];
+
+  let resultados;
+
+  if (calcModo === 'preco') {
+    // Usa a margem alvo para todos os canais
+    const margemAlvo = +document.getElementById('calc-margem-alvo').value || 0;
+    resultados = canaisOrdem.map(id => ({
+      lojaId: id,
+      nome: NOMES_CANAL[id],
+      r: encontrarPrecoPorMargem(cmv, margemAlvo, id, freteValor, freteQuem, 'credito_2_6x')
+    }));
+  } else {
+    // Usa o preço informado para todos os canais
+    const preco = +document.getElementById('calc-preco').value || 0;
+    resultados = canaisOrdem.map(id => ({
+      lojaId: id,
+      nome: NOMES_CANAL[id],
+      r: simularPreco(preco, cmv, id, freteValor, freteQuem, 'credito_2_6x')
+    }));
+  }
+
+  // Ordena pelo melhor lucro (ou menor preço se modo preço)
+  const ordenadoPorLucro = [...resultados].sort((a, b) => b.r.lucro - a.r.lucro);
+  const melhorLucro = ordenadoPorLucro[0];
+
+  const labelModo = calcModo === 'preco' ? 'Preço necessário' : 'Preço usado';
+
+  const rows = resultados.map(item => {
+    const r = item.r;
+    const cor = r.margem < (config.margemMin || 5) ? 'var(--pink)'
+              : r.margem >= (config.margemAlvo || 15) ? 'var(--green)'
+              : 'var(--orange)';
+    const lucroCor = r.lucro >= 0 ? 'var(--green)' : 'var(--pink)';
+    const destaque = item.lojaId === melhorLucro.lojaId ? 'background:rgba(0,229,160,0.05);border-left:2px solid var(--green);' : '';
+
+    return `<tr style="${destaque}">
+      <td class="hi" style="color:var(--text);">${item.nome}</td>
+      <td class="hi">${formatMoney(r.preco)}</td>
+      <td>${formatMoney(r.taxa.total)}</td>
+      <td>${formatMoney(r.imposto)}</td>
+      <td style="color:${lucroCor};font-weight:600;">${formatMoney(r.lucro)}</td>
+      <td style="color:${cor};font-weight:600;">${formatPct(r.margem)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('calc-compara-content').innerHTML = `
+    <div style="margin-bottom:12px;padding:12px 14px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--green);">
+      🏆 <strong>Canal mais rentável:</strong> ${melhorLucro.nome} — Lucro de ${formatMoney(melhorLucro.r.lucro)} com margem de ${formatPct(melhorLucro.r.margem)}
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="calc-compare-table">
+        <thead><tr>
+          <th>Canal</th>
+          <th>${labelModo}</th>
+          <th>Taxa</th>
+          <th>Imposto</th>
+          <th>Lucro</th>
+          <th>Margem</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:10px;line-height:1.6;">
+      ℹ️ O canal <strong>Site</strong> considera método de pagamento <strong>Crédito 2-6x Mastercard</strong> como padrão. Para ver com outro método, use a visão "Canal único".
+    </div>
+  `;
+}
+
+// ============================================================
+// ================== FIM CALCULADORA =========================
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', () => {
   init();
   initCharts();
@@ -1831,6 +2348,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
+
+  // Inicializar calculadora
+  if (document.getElementById('calc-cmv')) {
+    calcularResultado();
+  }
 });
 </script>
 </body>
