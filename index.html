@@ -589,8 +589,8 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
         <div class="cfg-card">
           <div class="cfg-title">Custos Operacionais</div>
           <div class="frow">
-            <div class="field"><label>Embalagem (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoEmbalagem" value="2.50" min="0" step="0.01"/></div></div>
-            <div class="field"><label>Operacional (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoOperacional" value="1.00" min="0" step="0.01"/></div></div>
+            <div class="field"><label>Embalagem (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoEmbalagem" value="1.00" min="0" step="0.01"/></div></div>
+            <div class="field"><label>Operacional (R$)</label><div class="iw"><span class="pre">R$</span><input type="number" id="custoOperacional" value="0" min="0" step="0.01"/></div></div>
             <div class="field"><label>Taxa padrão (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="taxaMLPadrao" value="12" min="0" max="30" step="0.1"/></div></div>
             <div class="field"><label>CMV padrão (%)</label><div class="iw"><span class="pre">%</span><input type="number" id="cmvPadrao" value="45" min="0" max="100" step="1"/></div></div>
           </div>
@@ -719,6 +719,10 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 <script>
 const PROXY_URL = 'https://margem.usenewyork.com.br';
 
+// Versão da config padrão. Incremente sempre que alterar DEFAULT_CONFIG
+// para forçar a migração automática no navegador dos usuários.
+const CONFIG_VERSION = 2;
+
 let config = {};
 let pedidosData = [];
 let currentPage = 1;
@@ -727,8 +731,8 @@ let kpiCharts = {};
 
 const DEFAULT_CONFIG = {
   blingKey: 'https://margem.usenewyork.com.br',
-  custoEmbalagem: 2.50,
-  custoOperacional: 1.00,
+  custoEmbalagem: 1.00,
+  custoOperacional: 0,
   taxaMLPadrao: 12,
   aliquotaSN: 10,
   faixaSN: '720000',
@@ -809,6 +813,27 @@ const CANAIS_CONFIG = [
 ];
 
 function init() {
+  // --- MIGRAÇÃO AUTOMÁTICA DO LOCALSTORAGE ---
+  // Se a versão salva não bate com a atual, sobrescreve os campos que mudaram
+  // com os valores do DEFAULT_CONFIG, sem apagar o resto da config do usuário.
+  const savedVersion = +(localStorage.getItem('margemml_config_version') || 0);
+  if (savedVersion < CONFIG_VERSION) {
+    const raw = localStorage.getItem('margemml_config');
+    if (raw) {
+      try {
+        const old = JSON.parse(raw);
+        // Força os valores novos para campos que foram alterados no código
+        old.custoEmbalagem = DEFAULT_CONFIG.custoEmbalagem;
+        old.custoOperacional = DEFAULT_CONFIG.custoOperacional;
+        localStorage.setItem('margemml_config', JSON.stringify(old));
+      } catch(e) {
+        // Se o localStorage estava corrompido, remove pra começar limpo
+        localStorage.removeItem('margemml_config');
+      }
+    }
+    localStorage.setItem('margemml_config_version', CONFIG_VERSION);
+  }
+
   const savedConfig = localStorage.getItem('margemml_config');
   config = savedConfig ? {...DEFAULT_CONFIG, ...JSON.parse(savedConfig)} : {...DEFAULT_CONFIG};
 
@@ -939,8 +964,8 @@ function getVal(id, defaultVal = 0) {
 function readConfigFromForm() {
   return {
     blingKey: getVal('blingKey', PROXY_URL),
-    custoEmbalagem: getVal('custoEmbalagem', 2.50),
-    custoOperacional: getVal('custoOperacional', 1.00),
+    custoEmbalagem: getVal('custoEmbalagem', 1.00),
+    custoOperacional: getVal('custoOperacional', 0),
     taxaMLPadrao: getVal('taxaMLPadrao', 12),
     aliquotaSN: getVal('aliquotaSN', 10),
     faixaSN: getVal('faixaSN', '720000'),
