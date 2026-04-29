@@ -452,6 +452,86 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 .calc-compare-table td.hi { color:var(--text); font-weight:600; }
 .calc-compare-table tr:hover td { background:rgba(0,212,255,0.02); }
 
+/* === Multi-select dropdown === */
+.ms-wrap { position:relative; }
+.ms-trigger {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  color:var(--text); font-family:var(--mono);
+  font-size:11px; padding:7px 26px 7px 10px;
+  cursor:pointer; user-select:none;
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; min-height:30px;
+  transition:border-color 0.15s;
+  position:relative;
+}
+.ms-trigger:hover { border-color:var(--cyan); }
+.ms-trigger.open { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,212,255,0.1); }
+.ms-trigger::after {
+  content:'▾';
+  position:absolute; right:9px; top:50%; transform:translateY(-50%);
+  color:var(--text3); font-size:10px;
+  transition:transform 0.15s;
+}
+.ms-trigger.open::after { transform:translateY(-50%) rotate(180deg); }
+.ms-trigger-label {
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ms-trigger-label.placeholder { color:var(--text3); }
+
+.ms-dropdown {
+  display:none;
+  position:absolute; top:calc(100% + 4px); left:0; right:0;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  z-index:200;
+  max-height:280px; overflow-y:auto;
+  min-width:200px;
+}
+.ms-dropdown.show { display:block; animation:msFade 0.15s ease; }
+@keyframes msFade { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+.ms-actions {
+  display:flex; gap:4px; padding:8px;
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--surface); z-index:1;
+}
+.ms-action-btn {
+  flex:1; padding:5px 8px;
+  background:transparent;
+  border:1px solid var(--border2);
+  border-radius:4px;
+  color:var(--text2);
+  font-family:var(--mono); font-size:10px;
+  cursor:pointer; transition:all 0.15s;
+}
+.ms-action-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+
+.ms-option {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; cursor:pointer;
+  font-family:var(--mono); font-size:11px;
+  color:var(--text); transition:background 0.1s;
+  user-select:none;
+}
+.ms-option:hover { background:rgba(0,212,255,0.06); }
+.ms-option input[type="checkbox"] {
+  width:14px; height:14px; cursor:pointer; accent-color:var(--cyan);
+  margin:0; flex-shrink:0;
+}
+.ms-option.selected { color:var(--cyan); }
+
+.ms-count-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:18px; height:16px; padding:0 5px;
+  background:var(--cyan); color:var(--bg);
+  border-radius:8px; font-size:9px; font-weight:700;
+  margin-left:4px; flex-shrink:0;
+}
+
 @media(max-width:900px) {
   .sidebar { display:none; }
   .kpi-grid { grid-template-columns:repeat(2,1fr); }
@@ -569,31 +649,24 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <input type="date" id="filterDateFrom" style="width:130px;" />
           <span style="color:var(--text3);font-size:11px;font-family:var(--mono);">—</span>
           <input type="date" id="filterDateTo" style="width:130px;" />
-          <select id="filterCanal" style="width:148px;">
-            <option value="">Todos os canais</option>
-            <option value="203628722">Mercado Livre</option>
-            <option value="203953121">Magalu</option>
-            <option value="205397393">Netshoes</option>
-            <option value="205401394">Amazon</option>
-            <option value="206006851">TikTok Shop</option>
-            <option value="206029808">Shopee</option>
-            <option value="205389906">Site</option>
-            <option value="203654110">Parque do Povo</option>
-            <option value="203777302">Prudenshopping</option>
-          </select>
-          <select id="filterSituacao" style="width:120px;">
-            <option value="">Todos status</option>
-            <option value="9">Atendido</option>
-            <option value="6">Em aberto</option>
-            <option value="12">Em andamento</option>
-            <option value="15">Cancelado</option>
-          </select>
-          <select id="filterMargem" style="width:120px;">
-            <option value="">Todas margens</option>
-            <option value="good">Boa (&gt;15%)</option>
-            <option value="warn">Atenção (5–15%)</option>
-            <option value="bad">Negativa (&lt;5%)</option>
-          </select>
+          <div class="ms-wrap" id="ms-canal" style="width:170px;">
+            <div class="ms-trigger" onclick="msToggle('canal')" id="ms-canal-trigger">
+              <span class="ms-trigger-label placeholder" id="ms-canal-label">Todos os canais</span>
+            </div>
+            <div class="ms-dropdown" id="ms-canal-dropdown"></div>
+          </div>
+          <div class="ms-wrap" id="ms-situacao" style="width:140px;">
+            <div class="ms-trigger" onclick="msToggle('situacao')" id="ms-situacao-trigger">
+              <span class="ms-trigger-label placeholder" id="ms-situacao-label">Todos status</span>
+            </div>
+            <div class="ms-dropdown" id="ms-situacao-dropdown"></div>
+          </div>
+          <div class="ms-wrap" id="ms-margem" style="width:140px;">
+            <div class="ms-trigger" onclick="msToggle('margem')" id="ms-margem-trigger">
+              <span class="ms-trigger-label placeholder" id="ms-margem-label">Todas margens</span>
+            </div>
+            <div class="ms-dropdown" id="ms-margem-dropdown"></div>
+          </div>
           <button class="btn btn-cyan" onclick="loadPedidos()">
             <span id="loadSpinner" style="display:none;"><span class="spinner"></span></span>
             Sincronizar
@@ -977,6 +1050,188 @@ const CANAIS_CONFIG = [
   { id: '203777302', nome: '🏬 Prudenshopping', tipo: 'Loja Física' },
 ];
 
+// ============================================================
+// =============== MULTI-SELECT DROPDOWN ======================
+// ============================================================
+// Estado dos filtros (arrays de valores selecionados; vazio = "todos")
+const msState = {
+  canal: [],     // ex: ['203628722', '203953121']
+  situacao: [],  // ex: ['9', '6']
+  margem: [],    // ex: ['good', 'warn']
+};
+
+// Definição das opções de cada filtro
+const MS_OPTIONS = {
+  canal: [
+    { value: '203628722', label: '🛒 Mercado Livre' },
+    { value: '203953121', label: '🛍️ Magalu' },
+    { value: '205397393', label: '👟 Netshoes' },
+    { value: '205401394', label: '📦 Amazon' },
+    { value: '206006851', label: '🎵 TikTok Shop' },
+    { value: '206029808', label: '🛒 Shopee' },
+    { value: '205389906', label: '🌐 Site' },
+    { value: '203654110', label: '🏪 Parque do Povo' },
+    { value: '203777302', label: '🏬 Prudenshopping' },
+  ],
+  situacao: [
+    { value: '9',  label: 'Atendido' },
+    { value: '6',  label: 'Em aberto' },
+    { value: '12', label: 'Em andamento' },
+    { value: '15', label: 'Cancelado' },
+  ],
+  margem: [
+    { value: 'good', label: 'Boa (>15%)' },
+    { value: 'warn', label: 'Atenção (5–15%)' },
+    { value: 'bad',  label: 'Negativa (<5%)' },
+  ],
+};
+
+const MS_PLACEHOLDERS = {
+  canal: 'Todos os canais',
+  situacao: 'Todos status',
+  margem: 'Todas margens',
+};
+
+function msInit() {
+  // Renderiza o conteúdo dos 3 dropdowns
+  ['canal', 'situacao', 'margem'].forEach(key => msRender(key));
+
+  // Fecha qualquer dropdown aberto ao clicar fora
+  document.addEventListener('click', (e) => {
+    ['canal', 'situacao', 'margem'].forEach(key => {
+      const wrap = document.getElementById('ms-' + key);
+      if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('ms-' + key + '-dropdown');
+        const tr = document.getElementById('ms-' + key + '-trigger');
+        if (dd) dd.classList.remove('show');
+        if (tr) tr.classList.remove('open');
+      }
+    });
+  });
+}
+
+function msRender(key) {
+  const dd = document.getElementById('ms-' + key + '-dropdown');
+  if (!dd) return;
+  const options = MS_OPTIONS[key];
+  const selected = msState[key];
+
+  // Botões "Selecionar todos" e "Limpar"
+  let html = `<div class="ms-actions">
+    <button class="ms-action-btn" onclick="msSelectAll('${key}')">✓ Todos</button>
+    <button class="ms-action-btn" onclick="msClear('${key}')">✕ Limpar</button>
+  </div>`;
+
+  // Lista de opções
+  html += options.map(opt => {
+    const isSelected = selected.includes(opt.value);
+    return `<label class="ms-option ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation()">
+      <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="msToggleValue('${key}', '${opt.value}')" />
+      <span>${opt.label}</span>
+    </label>`;
+  }).join('');
+
+  dd.innerHTML = html;
+  msUpdateLabel(key);
+}
+
+function msUpdateLabel(key) {
+  const label = document.getElementById('ms-' + key + '-label');
+  if (!label) return;
+  const selected = msState[key];
+  const options = MS_OPTIONS[key];
+
+  if (selected.length === 0) {
+    label.textContent = MS_PLACEHOLDERS[key];
+    label.classList.add('placeholder');
+  } else if (selected.length === options.length) {
+    label.innerHTML = `${MS_PLACEHOLDERS[key]} <span class="ms-count-badge">${selected.length}</span>`;
+    label.classList.remove('placeholder');
+  } else if (selected.length === 1) {
+    const opt = options.find(o => o.value === selected[0]);
+    label.textContent = opt ? opt.label : '';
+    label.classList.remove('placeholder');
+  } else {
+    label.innerHTML = `${selected.length} selecionados <span class="ms-count-badge">${selected.length}</span>`;
+    label.classList.remove('placeholder');
+  }
+}
+
+function msToggle(key) {
+  // Fecha outros dropdowns abertos
+  ['canal', 'situacao', 'margem'].forEach(k => {
+    if (k !== key) {
+      const dd = document.getElementById('ms-' + k + '-dropdown');
+      const tr = document.getElementById('ms-' + k + '-trigger');
+      if (dd) dd.classList.remove('show');
+      if (tr) tr.classList.remove('open');
+    }
+  });
+  // Toggle deste
+  const dd = document.getElementById('ms-' + key + '-dropdown');
+  const tr = document.getElementById('ms-' + key + '-trigger');
+  if (dd && tr) {
+    dd.classList.toggle('show');
+    tr.classList.toggle('open');
+  }
+}
+
+function msToggleValue(key, value) {
+  const idx = msState[key].indexOf(value);
+  if (idx === -1) {
+    msState[key].push(value);
+  } else {
+    msState[key].splice(idx, 1);
+  }
+  msRender(key);
+  // Se mudou canal, sincroniza com a sidebar
+  if (key === 'canal') syncSidebarFromMS();
+  // Atualiza a tabela
+  currentPage = 1;
+  renderPedidos();
+  updateChartsFromData();
+}
+
+function msSelectAll(key) {
+  msState[key] = MS_OPTIONS[key].map(o => o.value);
+  msRender(key);
+  if (key === 'canal') syncSidebarFromMS();
+  currentPage = 1;
+  renderPedidos();
+  updateChartsFromData();
+}
+
+function msClear(key) {
+  msState[key] = [];
+  msRender(key);
+  if (key === 'canal') syncSidebarFromMS();
+  currentPage = 1;
+  renderPedidos();
+  updateChartsFromData();
+}
+
+// Sincroniza a sidebar com o estado do multi-select de canais
+function syncSidebarFromMS() {
+  const map = {'203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
+  // Remove "active" de todos
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  // Se nada selecionado ou tudo selecionado, marca "Todos os canais"
+  if (msState.canal.length === 0 || msState.canal.length === MS_OPTIONS.canal.length) {
+    const el = document.getElementById('sb-all');
+    if (el) el.classList.add('active');
+  } else {
+    // Marca os selecionados individualmente
+    msState.canal.forEach(id => {
+      const el = document.getElementById(map[id]);
+      if (el) el.classList.add('active');
+    });
+  }
+}
+
+// ============================================================
+// ============= FIM MULTI-SELECT DROPDOWN ====================
+// ============================================================
+
 function init() {
   // --- MIGRAÇÃO AUTOMÁTICA DO LOCALSTORAGE ---
   // Se a versão salva não bate com a atual, sobrescreve os campos que mudaram
@@ -1090,14 +1345,25 @@ function showTab(name) {
 }
 
 function setSidebarCanal(lojaId) {
-  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-  const map = {'':'sb-all','203628722':'sb-ml','203953121':'sb-mag','205397393':'sb-net','205401394':'sb-amz','206006851':'sb-tik','206029808':'sb-sho','205389906':'sb-site','203654110':'sb-pp','203777302':'sb-ps'};
-  const el = document.getElementById(map[lojaId] || 'sb-all');
-  if (el) el.classList.add('active');
-  const sel = document.getElementById('filterCanal');
-  if (sel) sel.value = lojaId;
+  // Lojas físicas têm IDs específicos; pra simplificar, todos os canais funcionam por toggle
+  if (lojaId === '') {
+    // Clicou em "Todos os canais" → limpa seleção
+    msState.canal = [];
+  } else {
+    // Toggle: adiciona se não tem, remove se já tem
+    const idx = msState.canal.indexOf(lojaId);
+    if (idx === -1) {
+      msState.canal.push(lojaId);
+    } else {
+      msState.canal.splice(idx, 1);
+    }
+  }
+  // Atualiza visual da sidebar e do dropdown
+  syncSidebarFromMS();
+  msRender('canal');
   currentPage = 1;
   renderPedidos();
+  updateChartsFromData();
 }
 
 function setVal(id, value) {
@@ -1398,8 +1664,12 @@ async function loadPedidos() {
 
   const dateFrom = document.getElementById('filterDateFrom').value;
   const dateTo = document.getElementById('filterDateTo').value;
-  const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
-  const filterSituacao = document.getElementById('filterSituacao') ? document.getElementById('filterSituacao').value : '';
+
+  // Se exatamente 1 canal está selecionado, envia ele como filtro pro backend (mais rápido).
+  // Se múltiplos ou nenhum, busca tudo e filtra no frontend (que já faz isso em renderPedidos).
+  const filterCanal = msState.canal.length === 1 ? msState.canal[0] : '';
+  // Mesmo critério para situação
+  const filterSituacao = msState.situacao.length === 1 ? msState.situacao[0] : '';
 
   pedidosData = [];
 
@@ -1590,8 +1860,6 @@ function mapBlingPedido(p) {
 }
 
 function renderPedidos() {
-  const filterMargem = document.getElementById('filterMargem').value;
-  const filterCanal = document.getElementById('filterCanal') ? document.getElementById('filterCanal').value : '';
   const margemMin = +config.margemMin;
   const margemAlvo = +config.margemAlvo;
 
@@ -1600,10 +1868,24 @@ function renderPedidos() {
     return {...p, ...calc};
   });
 
-  if (filterCanal) filtered = filtered.filter(p => p.lojaId === filterCanal);
-  if (filterMargem === 'good')  filtered = filtered.filter(p => p.margem >= margemAlvo);
-  if (filterMargem === 'warn')  filtered = filtered.filter(p => p.margem >= margemMin && p.margem < margemAlvo);
-  if (filterMargem === 'bad')   filtered = filtered.filter(p => p.margem < margemMin);
+  // Filtro de canal (múltiplos)
+  if (msState.canal.length > 0 && msState.canal.length < MS_OPTIONS.canal.length) {
+    filtered = filtered.filter(p => msState.canal.includes(p.lojaId));
+  }
+
+  // Filtro de margem (múltiplos)
+  if (msState.margem.length > 0 && msState.margem.length < MS_OPTIONS.margem.length) {
+    filtered = filtered.filter(p => {
+      if (msState.margem.includes('good') && p.margem >= margemAlvo) return true;
+      if (msState.margem.includes('warn') && p.margem >= margemMin && p.margem < margemAlvo) return true;
+      if (msState.margem.includes('bad')  && p.margem < margemMin) return true;
+      return false;
+    });
+  }
+
+  // Nota: o filtro de situação é aplicado pelo backend (idSituacao no /sync/start).
+  // Se múltiplas situações forem selecionadas, todas voltam mas aqui não há campo p.situacao
+  // pra filtrar localmente; isso seria um próximo passo se necessário.
 
 const totalReceita = filtered.reduce((a,p) => a + p.venda, 0);
   const totalLucro   = filtered.reduce((a,p) => a + p.lucro, 0);
@@ -1869,7 +2151,9 @@ function exportarExcel() {
     return;
   }
 
-  const canal = document.getElementById('filterCanal')?.options[document.getElementById('filterCanal')?.selectedIndex]?.text || 'Todos';
+  const canal = msState.canal.length === 0 ? 'Todos'
+              : msState.canal.length === 1 ? (MS_OPTIONS.canal.find(o => o.value === msState.canal[0])?.label || 'Canal').replace(/[^\w\s]/g, '').trim()
+              : `${msState.canal.length}_canais`;
   const de = document.getElementById('filterDateFrom')?.value || '';
   const ate = document.getElementById('filterDateTo')?.value || '';
 
@@ -1912,7 +2196,9 @@ function exportarPDF() {
     return;
   }
 
-  const canal = document.getElementById('filterCanal')?.options[document.getElementById('filterCanal')?.selectedIndex]?.text || 'Todos os canais';
+  const canal = msState.canal.length === 0 ? 'Todos os canais'
+              : msState.canal.length === 1 ? (MS_OPTIONS.canal.find(o => o.value === msState.canal[0])?.label || 'Canal')
+              : `${msState.canal.length} canais selecionados`;
   const de = document.getElementById('filterDateFrom')?.value || '';
   const ate = document.getElementById('filterDateTo')?.value || '';
 
@@ -2340,14 +2626,8 @@ function renderResultadoComparativo(cmv, freteValor, freteQuem) {
 document.addEventListener('DOMContentLoaded', () => {
   init();
   initCharts();
+  msInit();  // Inicializa os 3 multi-select dropdowns
 
-  document.getElementById('filterMargem').addEventListener('change', () => { currentPage=1; renderPedidos(); });
-  if (document.getElementById('filterCanal')) {
-    document.getElementById('filterCanal').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
-  }
-  if (document.getElementById('filterSituacao')) {
-    document.getElementById('filterSituacao').addEventListener('change', () => { currentPage=1; renderPedidos(); updateChartsFromData(); });
-  }
   document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage=1; });
   document.getElementById('filterDateTo').addEventListener('change', () => { currentPage=1; });
 
