@@ -742,15 +742,15 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <div class="field" id="calc-campo-canal">
             <label>Canal de venda</label>
             <select id="calc-canal" onchange="calcularResultado()">
-              <option value="203628722">🛒 Mercado Livre</option>
-              <option value="203953121">🛍️ Magalu</option>
-              <option value="205397393">👟 Netshoes</option>
-              <option value="205401394">📦 Amazon</option>
-              <option value="206006851">🎵 TikTok Shop</option>
-              <option value="206029808">🛒 Shopee</option>
-              <option value="205389906">🌐 Site</option>
-              <option value="203654110">🏪 Parque do Povo</option>
-              <option value="203777302">🏬 Prudenshopping</option>
+              <option value="203628722">Mercado Livre</option>
+              <option value="203953121">Magalu</option>
+              <option value="205397393">Netshoes</option>
+              <option value="205401394">Amazon</option>
+              <option value="206006851">TikTok Shop</option>
+              <option value="206029808">Shopee</option>
+              <option value="205389906">Site</option>
+              <option value="203654110">Parque do Povo</option>
+              <option value="203777302">Prudenshopping</option>
             </select>
           </div>
         </div>
@@ -1039,15 +1039,15 @@ const TAXAS_CANAL = {
 };
 
 const CANAIS_CONFIG = [
-  { id: '203628722', nome: '🛒 Mercado Livre', tipo: 'Marketplace' },
-  { id: '203953121', nome: '🛍️ Magalu',        tipo: 'Marketplace' },
-  { id: '205397393', nome: '👟 Netshoes',       tipo: 'Marketplace' },
-  { id: '205401394', nome: '📦 Amazon',         tipo: 'Marketplace' },
-  { id: '206006851', nome: '🎵 TikTok Shop',    tipo: 'Marketplace' },
-  { id: '206029808', nome: '🛒 Shopee',         tipo: 'Marketplace' },
-  { id: '205389906', nome: '🌐 Site',           tipo: 'Gateway' },
-  { id: '203654110', nome: '🏪 Parque do Povo', tipo: 'Loja Física' },
-  { id: '203777302', nome: '🏬 Prudenshopping', tipo: 'Loja Física' },
+  { id: '203628722', nome: 'Mercado Livre', tipo: 'Marketplace' },
+  { id: '203953121', nome: 'Magalu',        tipo: 'Marketplace' },
+  { id: '205397393', nome: 'Netshoes',       tipo: 'Marketplace' },
+  { id: '205401394', nome: 'Amazon',         tipo: 'Marketplace' },
+  { id: '206006851', nome: 'TikTok Shop',    tipo: 'Marketplace' },
+  { id: '206029808', nome: 'Shopee',         tipo: 'Marketplace' },
+  { id: '205389906', nome: 'Site',           tipo: 'Gateway' },
+  { id: '203654110', nome: 'Parque do Povo', tipo: 'Loja Física' },
+  { id: '203777302', nome: 'Prudenshopping', tipo: 'Loja Física' },
 ];
 
 // ============================================================
@@ -1063,15 +1063,15 @@ const msState = {
 // Definição das opções de cada filtro
 const MS_OPTIONS = {
   canal: [
-    { value: '203628722', label: '🛒 Mercado Livre' },
-    { value: '203953121', label: '🛍️ Magalu' },
-    { value: '205397393', label: '👟 Netshoes' },
-    { value: '205401394', label: '📦 Amazon' },
-    { value: '206006851', label: '🎵 TikTok Shop' },
-    { value: '206029808', label: '🛒 Shopee' },
-    { value: '205389906', label: '🌐 Site' },
-    { value: '203654110', label: '🏪 Parque do Povo' },
-    { value: '203777302', label: '🏬 Prudenshopping' },
+    { value: '203628722', label: 'Mercado Livre' },
+    { value: '203953121', label: 'Magalu' },
+    { value: '205397393', label: 'Netshoes' },
+    { value: '205401394', label: 'Amazon' },
+    { value: '206006851', label: 'TikTok Shop' },
+    { value: '206029808', label: 'Shopee' },
+    { value: '205389906', label: 'Site' },
+    { value: '203654110', label: 'Parque do Povo' },
+    { value: '203777302', label: 'Prudenshopping' },
   ],
   situacao: [
     { value: '9',  label: 'Atendido' },
@@ -1310,7 +1310,11 @@ function setPeriodo(tipo) {
 }
 
 function formatDate(d) {
-  return d.toISOString().split('T')[0];
+  // Usa fuso horário local (não UTC) pra evitar pular dia depois das 21h no Brasil.
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
 }
 
 function formatMoney(v) {
@@ -2279,15 +2283,15 @@ let calcModo = 'preco';   // 'preco' (custo → preço) ou 'margem' (preço → 
 let calcView = 'unico';   // 'unico' ou 'compara'
 
 const NOMES_CANAL = {
-  '203628722': '🛒 Mercado Livre',
-  '203953121': '🛍️ Magalu',
-  '205397393': '👟 Netshoes',
-  '205401394': '📦 Amazon',
-  '206006851': '🎵 TikTok Shop',
-  '206029808': '🛒 Shopee',
-  '205389906': '🌐 Site',
-  '203654110': '🏪 Parque do Povo',
-  '203777302': '🏬 Prudenshopping',
+  '203628722': 'Mercado Livre',
+  '203953121': 'Magalu',
+  '205397393': 'Netshoes',
+  '205401394': 'Amazon',
+  '206006851': 'TikTok Shop',
+  '206029808': 'Shopee',
+  '205389906': 'Site',
+  '203654110': 'Parque do Povo',
+  '203777302': 'Prudenshopping',
 };
 
 function setCalcModo(modo) {
