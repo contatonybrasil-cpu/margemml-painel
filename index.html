@@ -1485,7 +1485,9 @@ function calcularTaxaCanal(lojaId, venda) {
 function mapBlingPedido(p) {
   const items = p.itens || [];
   const nomeItem = p.nomeProduto || (items.length > 0 ? (items[0].descricao || 'Produto') : 'Produto');
-  const venda = +(p.totalProdutos || p.total || 0);
+  // Prioriza p.total (valor líquido com desconto aplicado) em vez de p.totalProdutos
+  // (valor cheio dos itens). Isso garante que a margem reflita a receita real.
+  const venda = +(p.total || p.totalProdutos || 0);
 
   const cmvReal = p.cmvReal || null;
   const cmvItens = items.reduce((acc, i) => acc + (+i.custo || 0) * (+i.quantidade || 1), 0);
