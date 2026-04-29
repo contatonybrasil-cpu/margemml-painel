@@ -667,6 +667,10 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
             </div>
             <div class="ms-dropdown" id="ms-margem-dropdown"></div>
           </div>
+          <div class="search-wrap" style="position:relative;width:200px;">
+            <input type="text" id="searchPedido" placeholder="🔍 Buscar pedido, produto..." style="width:100%;padding-right:24px;" oninput="onSearchInput()" />
+            <button id="searchClear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">✕</button>
+          </div>
           <button class="btn btn-cyan" onclick="loadPedidos()">
             <span id="loadSpinner" style="display:none;"><span class="spinner"></span></span>
             Sincronizar
@@ -1230,6 +1234,47 @@ function syncSidebarFromMS() {
 
 // ============================================================
 // ============= FIM MULTI-SELECT DROPDOWN ====================
+// ============================================================
+
+// ============================================================
+// =================== BUSCA POR TEXTO ========================
+// ============================================================
+// Estado: termo de busca atual (em minúsculas pra busca case-insensitive)
+let searchTerm = '';
+
+function onSearchInput() {
+  const inp = document.getElementById('searchPedido');
+  const btn = document.getElementById('searchClear');
+  searchTerm = (inp.value || '').trim().toLowerCase();
+  // Mostra/esconde o botão de limpar
+  if (btn) btn.style.display = searchTerm ? 'block' : 'none';
+  currentPage = 1;
+  renderPedidos();
+  updateChartsFromData();
+}
+
+function clearSearch() {
+  const inp = document.getElementById('searchPedido');
+  if (inp) inp.value = '';
+  searchTerm = '';
+  const btn = document.getElementById('searchClear');
+  if (btn) btn.style.display = 'none';
+  currentPage = 1;
+  renderPedidos();
+  updateChartsFromData();
+}
+
+// Verifica se um pedido bate com o termo buscado
+// Procura no número do pedido e no nome do produto
+function pedidoMatchSearch(p, termo) {
+  if (!termo) return true;
+  const numero = String(p.numero || '').toLowerCase();
+  const produto = String(p.produto || '').toLowerCase();
+  return numero.includes(termo) || produto.includes(termo);
+}
+
+// ============================================================
+// ================== FIM BUSCA POR TEXTO =====================
 // ============================================================
 
 function init() {
@@ -1887,6 +1932,11 @@ function renderPedidos() {
     });
   }
 
+  // Filtro de busca por texto (número do pedido ou nome do produto)
+  if (searchTerm) {
+    filtered = filtered.filter(p => pedidoMatchSearch(p, searchTerm));
+  }
+
   // Nota: o filtro de situação é aplicado pelo backend (idSituacao no /sync/start).
   // Se múltiplas situações forem selecionadas, todas voltam mas aqui não há campo p.situacao
   // pra filtrar localmente; isso seria um próximo passo se necessário.
@@ -1924,8 +1974,8 @@ const totalReceita = filtered.reduce((a,p) => a + p.venda, 0);
   if (filtered.length === 0) {
     body.innerHTML = `<tr><td colspan="11"><div class="empty">
       <div class="empty-icon">${pedidosData.length === 0 ? '🔗' : '🔍'}</div>
-      <div class="empty-title">${pedidosData.length === 0 ? 'Aguardando sincronização' : 'Nenhum pedido com esse filtro'}</div>
-      <div class="empty-sub">${pedidosData.length === 0 ? 'Selecione o período e clique em Sincronizar.' : 'Tente mudar os filtros de data ou margem.'}</div>
+      <div class="empty-title">${pedidosData.length === 0 ? 'Aguardando sincronização' : (searchTerm ? `Nenhum resultado para "${searchTerm}"` : 'Nenhum pedido com esse filtro')}</div>
+      <div class="empty-sub">${pedidosData.length === 0 ? 'Selecione o período e clique em Sincronizar.' : (searchTerm ? 'Tente buscar por outro número ou nome de produto.' : 'Tente mudar os filtros de data ou margem.')}</div>
     </div></td></tr>`;
     document.getElementById('paginationRow').style.display = 'none';
     return;
