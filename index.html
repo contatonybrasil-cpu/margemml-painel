@@ -961,6 +961,90 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 <script>
 const PROXY_URL = 'https://margem.usenewyork.com.br';
 
+// ============================================================
+// ============= PERSISTÊNCIA NO SERVIDOR ====================
+// ============================================================
+// As configurações ficam salvas no servidor (via SQLite), então
+// quando você abrir o painel em qualquer dispositivo (Mac, PC,
+// celular), vai puxar as mesmas configurações automaticamente.
+// O localStorage continua sendo usado como fallback (se servidor
+// estiver offline) e como cache local pra abrir mais rápido.
+
+// Status atual do servidor (true = online, false = offline)
+let serverOnline = true;
+
+// Busca todas as configurações de uma vez do servidor
+async function loadConfigsFromServer() {
+  try {
+    const resp = await fetch(`${PROXY_URL}/config`, { signal: AbortSignal.timeout(5000) });
+    if (!resp.ok) {
+      serverOnline = false;
+      return null;
+    }
+    const data = await resp.json();
+    serverOnline = true;
+    return data.configs || {};
+  } catch (e) {
+    console.log('[server] Offline, usando localStorage como fallback:', e.message);
+    serverOnline = false;
+    return null;
+  }
+}
+
+// Salva uma configuração no servidor (mantém localStorage como cache)
+async function saveConfigToServer(key, value) {
+  try {
+    const resp = await fetch(`${PROXY_URL}/config/${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) {
+      serverOnline = false;
+      return false;
+    }
+    serverOnline = true;
+    return true;
+  } catch (e) {
+    console.log('[server] Erro ao salvar no servidor:', e.message);
+    serverOnline = false;
+    return false;
+  }
+}
+
+// Mostra uma mensagem temporária no canto da tela (status de save)
+function showSaveStatus(msg, isError = false) {
+  let el = document.getElementById('save-status-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'save-status-toast';
+    el.style.cssText = `
+      position:fixed; bottom:24px; right:24px; z-index:9999;
+      padding:10px 16px; border-radius:6px;
+      font-family: var(--mono, monospace); font-size:12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    `;
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = isError ? 'rgba(255, 80, 110, 0.15)' : 'rgba(0, 229, 160, 0.15)';
+  el.style.border = `1px solid ${isError ? '#ff506e' : '#00e5a0'}`;
+  el.style.color = isError ? '#ff506e' : '#00e5a0';
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+  }, 2500);
+}
+
+// ============================================================
+// ============ FIM PERSISTÊNCIA NO SERVIDOR =================
+// ============================================================
+
 // Versão da config padrão. Incremente sempre que alterar DEFAULT_CONFIG
 // para forçar a migração automática no navegador dos usuários.
 const CONFIG_VERSION = 2;
@@ -1277,7 +1361,7 @@ function pedidoMatchSearch(p, termo) {
 // ================== FIM BUSCA POR TEXTO =====================
 // ============================================================
 
-function init() {
+async function init() {
   // --- MIGRAÇÃO AUTOMÁTICA DO LOCALSTORAGE ---
   // Se a versão salva não bate com a atual, sobrescreve os campos que mudaram
   // com os valores do DEFAULT_CONFIG, sem apagar o resto da config do usuário.
@@ -1297,6 +1381,27 @@ function init() {
       }
     }
     localStorage.setItem('margemml_config_version', CONFIG_VERSION);
+  }
+
+  // --- TENTAR CARREGAR DO SERVIDOR PRIMEIRO ---
+  // Se servidor responder, usa os dados dele e sobrescreve o localStorage.
+  // Se servidor estiver offline, usa o localStorage como fallback.
+  const serverConfigs = await loadConfigsFromServer();
+  if (serverConfigs && Object.keys(serverConfigs).length > 0) {
+    console.log('[server] Configurações carregadas do servidor');
+    // Atualiza o localStorage com o que veio do servidor (cache local)
+    if (serverConfigs.main) {
+      localStorage.setItem('margemml_config', JSON.stringify(serverConfigs.main));
+    }
+    if (serverConfigs.taxas_canal) {
+      localStorage.setItem('margemml_taxas_canal', JSON.stringify(serverConfigs.taxas_canal));
+    }
+    if (serverConfigs.taxas_pagamento_site) {
+      localStorage.setItem('margemml_taxas_pagamento_site', JSON.stringify(serverConfigs.taxas_pagamento_site));
+    }
+    showSaveStatus('✓ Configurações sincronizadas');
+  } else if (!serverOnline) {
+    showSaveStatus('⚠ Servidor offline — usando configs locais', true);
   }
 
   const savedConfig = localStorage.getItem('margemml_config');
@@ -1458,12 +1563,19 @@ function readConfigFromForm() {
   };
 }
 
-function salvarConfig() {
+async function salvarConfig() {
   config = readConfigFromForm();
+  // 1. Salva no localStorage (cache local, sempre rápido)
   localStorage.setItem('margemml_config', JSON.stringify(config));
+  // 2. Tenta salvar no servidor (sincroniza com outros dispositivos)
+  const ok = await saveConfigToServer('main', config);
   updateStatus(!!config.blingKey);
   renderPedidos();
-  alert('✅ Configurações salvas!');
+  if (ok) {
+    showSaveStatus('✓ Configurações salvas no servidor');
+  } else {
+    showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
+  }
 }
 
 function resetConfig() {
@@ -1511,7 +1623,7 @@ function renderTaxasCanal() {
   }).join('');
 }
 
-function salvarTaxasCanal() {
+async function salvarTaxasCanal() {
   const saved = {};
   CANAIS_CONFIG.forEach(c => {
     const pct = document.getElementById('taxa_pct_' + c.id);
@@ -1525,9 +1637,16 @@ function salvarTaxasCanal() {
       };
     }
   });
+  // 1. localStorage (cache local)
   localStorage.setItem('margemml_taxas_canal', JSON.stringify(saved));
   Object.assign(TAXAS_CANAL, saved);
-  alert('✅ Taxas salvas! As margens serão recalculadas na próxima sincronização.');
+  // 2. Servidor (sincroniza)
+  const ok = await saveConfigToServer('taxas_canal', saved);
+  if (ok) {
+    showSaveStatus('✓ Taxas salvas no servidor');
+  } else {
+    showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
+  }
 }
 
 function resetTaxasCanal() {
@@ -1617,7 +1736,7 @@ function renderTaxasPagamento() {
   }
 }
 
-function salvarTaxasPagamento() {
+async function salvarTaxasPagamento() {
   const siteCfg = TAXAS_CANAL['205389906'];
   if (!siteCfg) return;
 
@@ -1653,13 +1772,22 @@ function salvarTaxasPagamento() {
 
   siteCfg.taxasPagamento = novaTP;
 
-  // Persiste tudo junto (pct da Tray + bandeiraPadrao + tabela completa)
-  localStorage.setItem('margemml_taxas_pagamento_site', JSON.stringify({
+  const payload = {
     pct: siteCfg.pct,
     bandeiraPadrao: siteCfg.bandeiraPadrao,
     taxasPagamento: novaTP,
-  }));
-  alert('✅ Taxas de pagamento salvas! Margens do canal Site serão recalculadas na próxima sincronização.');
+  };
+
+  // 1. localStorage (cache local)
+  localStorage.setItem('margemml_taxas_pagamento_site', JSON.stringify(payload));
+
+  // 2. Servidor (sincroniza)
+  const ok = await saveConfigToServer('taxas_pagamento_site', payload);
+  if (ok) {
+    showSaveStatus('✓ Taxas de pagamento salvas no servidor');
+  } else {
+    showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
+  }
 }
 
 function resetTaxasPagamento() {
