@@ -942,6 +942,32 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <strong>Site (Tray + Cielo):</strong> a <strong>Tray</strong> cobra 1% sobre toda venda (acima); a <strong>Cielo</strong> cobra conforme o método e a bandeira do cartão. Quando a bandeira do pedido não for identificada, usa a bandeira padrão acima.
         </div>
       </div>
+
+      <!-- CARD: Tabela de Frete por UF -->
+      <div class="cfg-card" style="margin-top:14px;">
+        <div class="cfg-title">📦 Frete real Correios — por UF</div>
+
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="aplicarTabelaFrete" onchange="toggleAplicarTabelaFrete()" />
+            <span>Aplicar tabela de frete nos pedidos com frete grátis</span>
+          </label>
+        </div>
+
+        <div class="nota" style="margin-bottom:14px;">
+          <strong>Como funciona:</strong> quando um pedido aparece com frete R$ 0,00 no Bling
+          (frete grátis pago pela empresa), o painel <strong>desconta o valor da tabela abaixo</strong>
+          como custo real estimado dos Correios, baseado no UF do cliente.
+          <br>Os valores foram pré-preenchidos com base no histórico real de postagens. Ajuste conforme seu contrato.
+        </div>
+
+        <div id="tabelaFreteContainer"></div>
+
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-cyan" onclick="salvarTabelaFrete()">Salvar tabela de frete</button>
+          <button class="btn btn-ghost" onclick="resetTabelaFrete()">Restaurar padrões</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1137,6 +1163,100 @@ const CANAIS_CONFIG = [
   { id: '203654110', nome: 'Parque do Povo', tipo: 'Loja Física' },
   { id: '203777302', nome: 'Prudenshopping', tipo: 'Loja Física' },
 ];
+
+// ============================================================
+// ============= TABELA DE FRETE POR UF =======================
+// ============================================================
+// Valores baseados em dados REAIS do histórico de postagem dos Correios
+// (do contrato "PAC CONTRATO AG"). Você pode ajustar na aba Taxas.
+//
+// Formato: cada UF tem o valor médio que vocês pagam aos Correios
+// para enviar 1 pedido (~1-2kg). Quando o pedido aparece com
+// frete grátis (cliente não pagou) e tem etiqueta gerada,
+// o painel subtrai esse valor do lucro como "custo real Correios".
+//
+// Os valores marcados como "estimado" não têm dados reais — calibre
+// quando tiver mais postagens reais para essas regiões.
+const TABELA_FRETE_PADRAO = {
+  // Sudeste (dados reais)
+  'SP': 19.00,  // média entre capital, Grande SP e interior próximo
+  'RJ': 21.00,  // estimado (proporção SP)
+  'MG': 30.00,  // dado real (Belo Horizonte R$ 29,99)
+  'ES': 23.00,  // estimado
+  // Sul (dados reais)
+  'PR': 21.50,  // dado real (Curitiba/Londrina ~R$ 21)
+  'SC': 22.00,  // estimado
+  'RS': 26.00,  // dado real (média Porto Alegre/Caxias R$ 19-31)
+  // Centro-Oeste (estimado)
+  'GO': 28.00,
+  'DF': 28.00,
+  'MT': 32.00,
+  'MS': 30.00,
+  // Nordeste (estimado)
+  'BA': 32.00,
+  'SE': 35.00,
+  'AL': 36.00,
+  'PE': 36.00,
+  'PB': 37.00,
+  'RN': 38.00,
+  'CE': 38.00,
+  'PI': 40.00,
+  'MA': 42.00,
+  // Norte (estimado)
+  'TO': 42.00,
+  'PA': 45.00,
+  'AP': 48.00,
+  'AM': 48.00,
+  'RR': 50.00,
+  'AC': 50.00,
+  'RO': 48.00,
+};
+
+// Estado em memória (será carregado do localStorage/servidor na inicialização)
+let tabelaFrete = {...TABELA_FRETE_PADRAO};
+
+// Configuração: aplicar tabela de frete? (default: true)
+let aplicarTabelaFrete = true;
+
+// Carrega a tabela do localStorage (ou usa a padrão)
+function carregarTabelaFrete() {
+  try {
+    const saved = localStorage.getItem('margemml_tabela_frete');
+    if (saved) {
+      const obj = JSON.parse(saved);
+      tabelaFrete = {...TABELA_FRETE_PADRAO, ...obj};
+    }
+    const flag = localStorage.getItem('margemml_aplicar_tabela_frete');
+    if (flag !== null) aplicarTabelaFrete = flag === 'true';
+  } catch (e) {
+    tabelaFrete = {...TABELA_FRETE_PADRAO};
+  }
+}
+
+// Lista de UFs em ordem por região, pra renderizar a tabela na UI de forma organizada
+const UFS_POR_REGIAO = [
+  { regiao: 'Sudeste',      ufs: ['SP', 'RJ', 'MG', 'ES'] },
+  { regiao: 'Sul',          ufs: ['PR', 'SC', 'RS'] },
+  { regiao: 'Centro-Oeste', ufs: ['GO', 'DF', 'MT', 'MS'] },
+  { regiao: 'Nordeste',     ufs: ['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'] },
+  { regiao: 'Norte',        ufs: ['TO', 'PA', 'AP', 'AM', 'RR', 'AC', 'RO'] },
+];
+
+// Calcula o custo real estimado de frete pra um pedido,
+// baseado no UF do cliente. Retorna 0 se não tiver UF identificável.
+function calcularFreteCorreios(pedido) {
+  if (!aplicarTabelaFrete) return 0;
+  // Tenta pegar o UF do cliente do JSON do Bling.
+  // Caminho: pedido.transporte.etiqueta.uf
+  const uf = (pedido?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
+  if (!uf || uf.length !== 2) return 0;
+  return tabelaFrete[uf] || 0;
+}
+
+// ============================================================
+// =========== FIM TABELA DE FRETE POR UF =====================
+// ============================================================
+
 
 // ============================================================
 // =============== MULTI-SELECT DROPDOWN ======================
@@ -1399,6 +1519,12 @@ async function init() {
     if (serverConfigs.taxas_pagamento_site) {
       localStorage.setItem('margemml_taxas_pagamento_site', JSON.stringify(serverConfigs.taxas_pagamento_site));
     }
+    if (serverConfigs.tabela_frete) {
+      localStorage.setItem('margemml_tabela_frete', JSON.stringify(serverConfigs.tabela_frete));
+    }
+    if (serverConfigs.aplicar_tabela_frete !== undefined) {
+      localStorage.setItem('margemml_aplicar_tabela_frete', String(serverConfigs.aplicar_tabela_frete));
+    }
     showSaveStatus('✓ Configurações sincronizadas');
   } else if (!serverOnline) {
     showSaveStatus('⚠ Servidor offline — usando configs locais', true);
@@ -1408,9 +1534,11 @@ async function init() {
   config = savedConfig ? {...DEFAULT_CONFIG, ...JSON.parse(savedConfig)} : {...DEFAULT_CONFIG};
 
   carregarTaxasCanal();
+  carregarTabelaFrete();
   applyConfigToForm();
   renderTaxasCanal();
   renderTaxasPagamento();
+  renderTabelaFrete();
 
   pedidosData = [];
   renderPedidos();
@@ -1795,6 +1923,92 @@ function resetTaxasPagamento() {
   location.reload();
 }
 
+// ============================================================
+// =========== UI DA TABELA DE FRETE ==========================
+// ============================================================
+function renderTabelaFrete() {
+  const container = document.getElementById('tabelaFreteContainer');
+  if (!container) return;
+
+  const checkbox = document.getElementById('aplicarTabelaFrete');
+  if (checkbox) checkbox.checked = aplicarTabelaFrete;
+
+  // Renderiza a tabela agrupada por região
+  let html = '<div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));gap:14px;">';
+
+  UFS_POR_REGIAO.forEach(grupo => {
+    html += `<div style="background:rgba(0,0,0,0.15);border:1px solid var(--border);border-radius:6px;padding:10px;">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1.5px;">${grupo.regiao}</div>
+      <table style="width:100%;border-collapse:collapse;">`;
+    grupo.ufs.forEach(uf => {
+      const valor = tabelaFrete[uf] != null ? tabelaFrete[uf] : 0;
+      html += `<tr>
+        <td style="padding:4px 6px;font-family:var(--mono);font-size:12px;color:var(--text2);width:36px;">${uf}</td>
+        <td style="padding:4px 6px;">
+          <div class="iw" style="margin:0;">
+            <span class="pre">R$</span>
+            <input type="number" min="0" step="0.01" id="frete_uf_${uf}" value="${valor.toFixed(2)}" style="width:100%;" />
+          </div>
+        </td>
+      </tr>`;
+    });
+    html += `</table></div>`;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleAplicarTabelaFrete() {
+  const checkbox = document.getElementById('aplicarTabelaFrete');
+  aplicarTabelaFrete = !!(checkbox && checkbox.checked);
+  // Salva imediatamente o flag (e re-renderiza pra recalcular)
+  localStorage.setItem('margemml_aplicar_tabela_frete', String(aplicarTabelaFrete));
+}
+
+async function salvarTabelaFrete() {
+  // Lê todos os inputs e atualiza a tabela em memória
+  const nova = {};
+  Object.keys(TABELA_FRETE_PADRAO).forEach(uf => {
+    const inp = document.getElementById('frete_uf_' + uf);
+    if (inp) nova[uf] = parseFloat(inp.value) || 0;
+  });
+  tabelaFrete = nova;
+
+  // Lê o checkbox
+  const checkbox = document.getElementById('aplicarTabelaFrete');
+  aplicarTabelaFrete = !!(checkbox && checkbox.checked);
+
+  // 1. localStorage (cache local)
+  localStorage.setItem('margemml_tabela_frete', JSON.stringify(tabelaFrete));
+  localStorage.setItem('margemml_aplicar_tabela_frete', String(aplicarTabelaFrete));
+
+  // 2. Servidor (sincroniza)
+  const okTabela = await saveConfigToServer('tabela_frete', tabelaFrete);
+  const okFlag = await saveConfigToServer('aplicar_tabela_frete', aplicarTabelaFrete);
+
+  if (okTabela && okFlag) {
+    showSaveStatus('✓ Tabela de frete salva no servidor');
+  } else {
+    showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
+  }
+
+  // Recalcula os pedidos já carregados
+  renderPedidos();
+  updateChartsFromData();
+}
+
+function resetTabelaFrete() {
+  if (!confirm('Restaurar todos os valores padrão da tabela de frete?')) return;
+  tabelaFrete = {...TABELA_FRETE_PADRAO};
+  localStorage.removeItem('margemml_tabela_frete');
+  renderTabelaFrete();
+}
+
+// ============================================================
+// =========== FIM UI DA TABELA DE FRETE ======================
+// ============================================================
+
 async function testarConexao() {
   showAlert('warn', '🔄 Testando conexão com o servidor...');
 
@@ -2007,9 +2221,31 @@ function mapBlingPedido(p) {
     taxaML = (venda * taxaPct / 100) + taxaFixa;
   }
 
-  const frete = (p.custoFreteML !== null && p.custoFreteML !== undefined)
-    ? p.custoFreteML
-    : +(p.transporte?.frete || 0);
+  // Frete: prioridade
+  // 1. p.custoFreteML (custo real do vendedor que vem da API do Bling/marketplaces)
+  // 2. p.transporte.frete (valor já gravado no pedido)
+  // 3. Se ambos forem 0 e o pedido tem UF do cliente: usa tabela de frete dos Correios
+  let frete = 0;
+  let freteOrigem = 'estimado'; // 'real' (API), 'tabela' (UF), 'zero'
+  if (p.custoFreteML !== null && p.custoFreteML !== undefined && p.custoFreteML > 0) {
+    frete = p.custoFreteML;
+    freteOrigem = 'real';
+  } else if (p.transporte?.frete > 0) {
+    frete = +p.transporte.frete;
+    freteOrigem = 'real';
+  } else {
+    // Frete zerado no Bling: provavelmente frete grátis pago pela empresa.
+    // Aplica tabela de UF se configurada.
+    const freteTabela = calcularFreteCorreios(p);
+    if (freteTabela > 0) {
+      frete = freteTabela;
+      freteOrigem = 'tabela';
+    } else {
+      freteOrigem = 'zero';
+    }
+  }
+
+  const ufCliente = (p?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
 
   const outrasDespesas = p.outrasDespesas || 0;
 
@@ -2025,6 +2261,8 @@ function mapBlingPedido(p) {
     taxaGateway,   // breakdown Site
     taxaTrayReal,  // true se taxaTray veio da API do Bling
     frete,
+    freteOrigem,
+    ufCliente,
     outrasDespesas,
     canal: p.canal || 'Outros',
     lojaId: p.lojaId || '',
@@ -2203,7 +2441,11 @@ function openModal(num) {
     </div>
     `}
     <div class="brow">
-      <span class="brow-label">🚚 Frete (custo vendedor)</span>
+      <span class="brow-label">🚚 ${
+        m.freteOrigem === 'real' ? 'Frete (custo real)'
+        : m.freteOrigem === 'tabela' ? `Frete (estim. tabela ${m.ufCliente || ''})`
+        : 'Frete (custo vendedor)'
+      }</span>
       <span class="brow-val neg">– ${formatMoney(m.frete)}</span>
     </div>
     ${m.outrasDespesas > 0 ? `<div class="brow">
