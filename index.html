@@ -945,9 +945,9 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
 
       <!-- CARD: Tabela de Frete por UF -->
       <div class="cfg-card" style="margin-top:14px;">
-        <div class="cfg-title">📦 Frete real Correios — por UF</div>
+        <div class="cfg-title">📦 Frete real Correios — Contrato PLATINUM</div>
 
-        <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
             <input type="checkbox" id="aplicarTabelaFrete" onchange="toggleAplicarTabelaFrete()" />
             <span>Aplicar tabela de frete nos pedidos com frete grátis</span>
@@ -955,18 +955,37 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
         </div>
 
         <div class="nota" style="margin-bottom:14px;">
-          <strong>Como funciona:</strong> quando um pedido aparece com frete R$ 0,00 no Bling
-          (frete grátis pago pela empresa), o painel <strong>desconta o valor da tabela abaixo</strong>
-          como custo real estimado dos Correios, baseado no UF do cliente.
-          <br>Os valores foram pré-preenchidos com base no histórico real de postagens. Ajuste conforme seu contrato.
+          <strong>Como funciona:</strong> quando um pedido aparece com frete R$ 0 no Bling
+          (frete grátis pago pela empresa), o painel calcula o custo real Correios usando a
+          tabela do seu <strong>contrato PLATINUM</strong>. O cálculo considera:
+          <ul style="margin:8px 0 0 18px;padding:0;">
+            <li><strong>Serviço:</strong> PAC ou SEDEX (detectado automaticamente do pedido)</li>
+            <li><strong>Destino:</strong> UF + CEP (distingue capital × interior)</li>
+            <li><strong>Peso:</strong> peso bruto preenchido no Bling, ou peso médio padrão (abaixo)</li>
+            <li><strong>Pres. Prudente local</strong> (CEP 190xx): aplica tarifa LOCAL especial no SEDEX</li>
+          </ul>
         </div>
 
-        <div id="tabelaFreteContainer"></div>
-
-        <div style="display:flex;gap:8px;margin-top:16px;">
-          <button class="btn btn-cyan" onclick="salvarTabelaFrete()">Salvar tabela de frete</button>
-          <button class="btn btn-ghost" onclick="resetTabelaFrete()">Restaurar padrões</button>
+        <div class="field" style="max-width:360px;">
+          <label>Peso médio padrão (gramas) — usado quando o Bling não tem peso</label>
+          <div class="iw">
+            <span class="pre">g</span>
+            <input type="number" min="100" max="30000" step="50" id="pesoMedioPadrao" />
+          </div>
         </div>
+
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="btn btn-cyan" onclick="salvarConfigFrete()">Salvar configurações</button>
+        </div>
+
+        <details style="margin-top:18px;">
+          <summary style="cursor:pointer;font-size:12px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:1.2px;">Ver tabela de preços (referência)</summary>
+          <div style="margin-top:10px;font-size:11px;color:var(--text2);font-family:var(--mono);background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;border:1px solid var(--border);overflow-x:auto;">
+            <div style="margin-bottom:6px;color:var(--accent-cyan);"><strong>SEDEX</strong> — Pres. Prudente Local 1kg: R$ 12,71 · SP estadual 1kg: R$ 21,96 · Zona 1 capital 1kg: R$ 31,27 · Zona 1 interior 1kg: R$ 48,15</div>
+            <div style="color:var(--accent-cyan);"><strong>PAC</strong> — SP estadual 1kg: R$ 18,39 · Zona 1 capital 1kg: R$ 21,90 · Zona 1 interior 1kg: R$ 25,94 · Zona 4 capital 1kg: R$ 32,85</div>
+            <div style="margin-top:8px;color:var(--text3);">Zonas: 1=DF/ES/GO/MG/MS/PR/RJ/RS/SC · 2=BA/MT · 3=CE/PA/PE/TO · 4=AC/AL/AM/AP/MA/PB/PI/RN/RO/RR/SE</div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1165,97 +1184,248 @@ const CANAIS_CONFIG = [
 ];
 
 // ============================================================
-// ============= TABELA DE FRETE POR UF =======================
+// ============ TABELA CORREIOS — CONTRATO PLATINUM ===========
 // ============================================================
-// Valores baseados em dados REAIS do histórico de postagem dos Correios
-// (do contrato "PAC CONTRATO AG"). Você pode ajustar na aba Taxas.
+// Valores REAIS do contrato "PACOTE PLATINUM" (PAC + SEDEX) da
+// NY Multimarcas. Cobertura: PAC (5 zonas), SEDEX (6 zonas com
+// distinção capital × interior), 11 faixas de peso até 10kg.
 //
-// Formato: cada UF tem o valor médio que vocês pagam aos Correios
-// para enviar 1 pedido (~1-2kg). Quando o pedido aparece com
-// frete grátis (cliente não pagou) e tem etiqueta gerada,
-// o painel subtrai esse valor do lucro como "custo real Correios".
+// Quando o pedido aparece com frete R$ 0 (frete grátis pago pela
+// empresa) e tem etiqueta gerada, o painel calcula o custo real
+// baseado em: serviço (PAC/SEDEX) + UF + CEP (capital/interior) + peso.
 //
-// Os valores marcados como "estimado" não têm dados reais — calibre
-// quando tiver mais postagens reais para essas regiões.
-const TABELA_FRETE_PADRAO = {
-  // Sudeste (dados reais)
-  'SP': 19.00,  // média entre capital, Grande SP e interior próximo
-  'RJ': 21.00,  // estimado (proporção SP)
-  'MG': 30.00,  // dado real (Belo Horizonte R$ 29,99)
-  'ES': 23.00,  // estimado
-  // Sul (dados reais)
-  'PR': 21.50,  // dado real (Curitiba/Londrina ~R$ 21)
-  'SC': 22.00,  // estimado
-  'RS': 26.00,  // dado real (média Porto Alegre/Caxias R$ 19-31)
-  // Centro-Oeste (estimado)
-  'GO': 28.00,
-  'DF': 28.00,
-  'MT': 32.00,
-  'MS': 30.00,
-  // Nordeste (estimado)
-  'BA': 32.00,
-  'SE': 35.00,
-  'AL': 36.00,
-  'PE': 36.00,
-  'PB': 37.00,
-  'RN': 38.00,
-  'CE': 38.00,
-  'PI': 40.00,
-  'MA': 42.00,
-  // Norte (estimado)
-  'TO': 42.00,
-  'PA': 45.00,
-  'AP': 48.00,
-  'AM': 48.00,
-  'RR': 50.00,
-  'AC': 50.00,
-  'RO': 48.00,
-};
+// Origem: Pres. Prudente/SP. Faixas locais (190xx) usam o preço
+// "LOCAL" (só SEDEX). Pra atualizar, mexa no objeto abaixo.
 
-// Estado em memória (será carregado do localStorage/servidor na inicialização)
-let tabelaFrete = {...TABELA_FRETE_PADRAO};
-
-// Configuração: aplicar tabela de frete? (default: true)
-let aplicarTabelaFrete = true;
-
-// Carrega a tabela do localStorage (ou usa a padrão)
-function carregarTabelaFrete() {
-  try {
-    const saved = localStorage.getItem('margemml_tabela_frete');
-    if (saved) {
-      const obj = JSON.parse(saved);
-      tabelaFrete = {...TABELA_FRETE_PADRAO, ...obj};
-    }
-    const flag = localStorage.getItem('margemml_aplicar_tabela_frete');
-    if (flag !== null) aplicarTabelaFrete = flag === 'true';
-  } catch (e) {
-    tabelaFrete = {...TABELA_FRETE_PADRAO};
-  }
-}
-
-// Lista de UFs em ordem por região, pra renderizar a tabela na UI de forma organizada
-const UFS_POR_REGIAO = [
-  { regiao: 'Sudeste',      ufs: ['SP', 'RJ', 'MG', 'ES'] },
-  { regiao: 'Sul',          ufs: ['PR', 'SC', 'RS'] },
-  { regiao: 'Centro-Oeste', ufs: ['GO', 'DF', 'MT', 'MS'] },
-  { regiao: 'Nordeste',     ufs: ['BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA'] },
-  { regiao: 'Norte',        ufs: ['TO', 'PA', 'AP', 'AM', 'RR', 'AC', 'RO'] },
+// Faixas de peso (gramas). O valor de cada zona é o preço para
+// pacotes COM PESO ATÉ esse limite. Ex: 'p1000' = pesos de 501g a 1kg.
+const FAIXAS_PESO = [
+  { id: 'p300',   ate: 300   }, // 0 a 300g
+  { id: 'p500',   ate: 500   }, // 301 a 500g
+  { id: 'p1000',  ate: 1000  }, // 501g a 1kg
+  { id: 'p2000',  ate: 2000  }, // 1.001 a 2kg
+  { id: 'p3000',  ate: 3000  }, // 2.001 a 3kg
+  { id: 'p4000',  ate: 4000  }, // 3.001 a 4kg
+  { id: 'p5000',  ate: 5000  }, // 4.001 a 5kg
+  { id: 'p6000',  ate: 6000  }, // 5.001 a 6kg
+  { id: 'p7000',  ate: 7000  }, // 6.001 a 7kg
+  { id: 'p8000',  ate: 8000  }, // 7.001 a 8kg
+  { id: 'p9000',  ate: 9000  }, // 8.001 a 9kg
+  { id: 'p10000', ate: 10000 }, // 9.001 a 10kg
 ];
 
-// Calcula o custo real estimado de frete pra um pedido,
-// baseado no UF do cliente. Retorna 0 se não tiver UF identificável.
+// Mapeamento UF → zona da tabela do contrato
+// Zonas: 1 = DF/ES/GO/MG/MS/PR/RJ/RS/SC
+//        2 = BA/MT
+//        3 = CE/PA/PE/TO
+//        4 = AC/AL/AM/AP/MA/PB/PI/RN/RO/RR/SE
+const UF_PARA_ZONA = {
+  // Zona 1
+  'DF': 1, 'ES': 1, 'GO': 1, 'MG': 1, 'MS': 1, 'PR': 1, 'RJ': 1, 'RS': 1, 'SC': 1,
+  // Zona 2
+  'BA': 2, 'MT': 2,
+  // Zona 3
+  'CE': 3, 'PA': 3, 'PE': 3, 'TO': 3,
+  // Zona 4
+  'AC': 4, 'AL': 4, 'AM': 4, 'AP': 4, 'MA': 4, 'PB': 4, 'PI': 4, 'RN': 4, 'RO': 4, 'RR': 4, 'SE': 4,
+  // SP é tratado separadamente (estadual)
+  'SP': 'SP',
+};
+
+// CEPs das capitais brasileiras (faixas inicial-final).
+// Pra detectar se o destino é CAPITAL ou INTERIOR, comparamos os 5 primeiros dígitos.
+// Fonte: Correios — faixas oficiais de CEP por capital.
+const CEPS_CAPITAIS = {
+  'AC': [['69900', '69920']], // Rio Branco
+  'AL': [['57000', '57100']], // Maceió
+  'AM': [['69000', '69099']], // Manaus
+  'AP': [['68900', '68914']], // Macapá
+  'BA': [['40000', '42599']], // Salvador
+  'CE': [['60000', '60899']], // Fortaleza
+  'DF': [['70000', '72799'], ['73000', '73699']], // Brasília (DF inteiro é "capital")
+  'ES': [['29000', '29099']], // Vitória
+  'GO': [['74000', '74899']], // Goiânia
+  'MA': [['65000', '65099']], // São Luís
+  'MG': [['30000', '31999']], // Belo Horizonte
+  'MS': [['79000', '79129']], // Campo Grande
+  'MT': [['78000', '78075']], // Cuiabá
+  'PA': [['66000', '66999']], // Belém
+  'PB': [['58000', '58099']], // João Pessoa
+  'PE': [['50000', '52999']], // Recife
+  'PI': [['64000', '64099']], // Teresina
+  'PR': [['80000', '82999']], // Curitiba
+  'RJ': [['20000', '23799']], // Rio de Janeiro (capital)
+  'RN': [['59000', '59140']], // Natal
+  'RO': [['76800', '76834']], // Porto Velho
+  'RR': [['69300', '69339']], // Boa Vista
+  'RS': [['90000', '91999']], // Porto Alegre
+  'SC': [['88000', '88099']], // Florianópolis
+  'SE': [['49000', '49099']], // Aracaju
+  'TO': [['77000', '77024']], // Palmas
+  // SP não usa porque é tratado como zona "estadual" (não importa capital/interior)
+};
+
+// Tabela de preços do contrato. Estrutura:
+//   TABELA_CORREIOS[servico][zona/local].faixas[idFaixa] = valor R$
+//   TABELA_CORREIOS[servico][zona/local].adicional = valor por kg adicional acima de 10kg
+//
+// Zonas SEDEX:  'PP_LOCAL', 'SP_ESTADUAL', '1_CAP', '1_INT', '2_CAP', '2_INT', '3_CAP', '3_INT', '4_CAP', '4_INT'
+// Zonas PAC:    'SP_ESTADUAL', '1_CAP', '1_INT', '2_CAP', '2_INT', '3_CAP', '3_INT', '4_CAP', '4_INT'
+const TABELA_CORREIOS = {
+  SEDEX: {
+    'PP_LOCAL':    { faixas: { p300: 10.57, p500: 11.85, p1000: 12.71, p2000: 15.94, p3000: 17.78, p4000: 19.21, p5000: 20.76, p6000: 22.08, p7000: 23.46, p8000: 24.79, p9000: 25.60, p10000: 26.17 }, adicional: 3.24 },
+    'SP_ESTADUAL': { faixas: { p300: 19.00, p500: 19.69, p1000: 21.96, p2000: 24.22, p3000: 26.46, p4000: 29.15, p5000: 31.40, p6000: 33.91, p7000: 36.33, p8000: 38.84, p9000: 41.38, p10000: 44.18 }, adicional: 5.48 },
+    '1_CAP':       { faixas: { p300: 28.85, p500: 30.06, p1000: 31.27, p2000: 37.69, p3000: 44.01, p4000: 50.45, p5000: 55.69, p6000: 61.06, p7000: 67.37, p8000: 73.79, p9000: 80.24, p10000: 86.69 }, adicional: 10.75 },
+    '1_INT':       { faixas: { p300: 45.73, p500: 46.92, p1000: 48.15, p2000: 60.20, p3000: 72.14, p4000: 78.58, p5000: 95.06, p6000: 100.42, p7000: 106.76, p8000: 118.79, p9000: 125.23, p10000: 131.69 }, adicional: 16.33 },
+    '2_CAP':       { faixas: { p300: 40.39, p500: 42.08, p1000: 43.77, p2000: 52.80, p3000: 59.42, p4000: 68.13, p5000: 75.18, p6000: 82.42, p7000: 90.95, p8000: 99.63, p9000: 108.32, p10000: 117.03 }, adicional: 14.51 },
+    '2_INT':       { faixas: { p300: 58.39, p500: 60.07, p1000: 61.78, p2000: 76.42, p3000: 88.67, p4000: 97.37, p5000: 115.66, p6000: 122.92, p7000: 131.45, p8000: 145.75, p9000: 154.46, p10000: 163.13 }, adicional: 20.23 },
+    '3_CAP':       { faixas: { p300: 51.93, p500: 54.09, p1000: 56.29, p2000: 67.88, p3000: 83.63, p4000: 95.87, p5000: 105.82, p6000: 116.01, p7000: 127.99, p8000: 140.24, p9000: 152.46, p10000: 164.71 }, adicional: 20.43 },
+    '3_INT':       { faixas: { p300: 70.49, p500: 72.66, p1000: 74.85, p2000: 92.05, p3000: 113.43, p4000: 125.70, p5000: 146.86, p6000: 157.05, p7000: 169.04, p8000: 186.93, p9000: 199.16, p10000: 211.39 }, adicional: 26.21 },
+    '4_CAP':       { faixas: { p300: 60.59, p500: 63.10, p1000: 65.68, p2000: 79.17, p3000: 101.22, p4000: 116.06, p5000: 128.08, p6000: 140.42, p7000: 154.96, p8000: 169.76, p9000: 184.55, p10000: 199.38 }, adicional: 24.72 },
+    '4_INT':       { faixas: { p300: 80.85, p500: 83.37, p1000: 85.90, p2000: 105.05, p3000: 132.73, p4000: 147.57, p5000: 170.83, p6000: 183.18, p7000: 197.70, p8000: 218.14, p9000: 232.93, p10000: 247.73 }, adicional: 30.71 },
+  },
+  PAC: {
+    'SP_ESTADUAL': { faixas: { p300: 15.45, p500: 17.17, p1000: 18.39, p2000: 19.38, p3000: 23.17, p4000: 24.72, p5000: 26.45, p6000: 27.89, p7000: 29.47, p8000: 30.96, p9000: 31.86, p10000: 32.51 }, adicional: 4.04 },
+    '1_CAP':       { faixas: { p300: 18.40, p500: 20.44, p1000: 21.90, p2000: 24.07, p3000: 28.77, p4000: 30.73, p5000: 32.84, p6000: 36.38, p7000: 40.17, p8000: 43.76, p9000: 45.92, p10000: 47.45 }, adicional: 5.88 },
+    '1_INT':       { faixas: { p300: 22.01, p500: 24.46, p1000: 25.94, p2000: 30.77, p3000: 35.47, p4000: 45.48, p5000: 47.62, p6000: 55.18, p7000: 58.96, p8000: 75.98, p9000: 78.13, p10000: 79.67 }, adicional: 9.86 },
+    '2_CAP':       { faixas: { p300: 20.62, p500: 22.91, p1000: 24.54, p2000: 26.95, p3000: 32.22, p4000: 34.42, p5000: 36.79, p6000: 41.84, p7000: 46.22, p8000: 50.34, p9000: 52.80, p10000: 54.58 }, adicional: 6.76 },
+    '2_INT':       { faixas: { p300: 26.63, p500: 29.59, p1000: 31.24, p2000: 36.35, p3000: 41.62, p4000: 51.86, p5000: 54.26, p6000: 63.33, p7000: 67.67, p8000: 85.24, p9000: 87.69, p10000: 89.47 }, adicional: 11.10 },
+    '3_CAP':       { faixas: { p300: 23.00, p500: 25.56, p1000: 27.39, p2000: 30.09, p3000: 35.96, p4000: 38.41, p5000: 41.07, p6000: 47.75, p7000: 52.73, p8000: 57.44, p9000: 60.25, p10000: 62.28 }, adicional: 7.73 },
+    '3_INT':       { faixas: { p300: 44.75, p500: 49.72, p1000: 51.54, p2000: 56.92, p3000: 62.79, p4000: 73.29, p5000: 75.97, p6000: 86.67, p7000: 91.64, p8000: 109.79, p9000: 112.62, p10000: 114.63 }, adicional: 14.20 },
+    '4_CAP':       { faixas: { p300: 27.59, p500: 30.66, p1000: 32.85, p2000: 36.10, p3000: 43.14, p4000: 46.08, p5000: 49.29, p6000: 59.11, p7000: 65.28, p8000: 71.13, p9000: 74.59, p10000: 77.12 }, adicional: 9.56 },
+    '4_INT':       { faixas: { p300: 61.43, p500: 68.25, p1000: 70.43, p2000: 76.38, p3000: 83.42, p4000: 94.39, p5000: 97.60, p6000: 111.46, p7000: 117.62, p8000: 136.89, p9000: 140.38, p10000: 142.87 }, adicional: 17.71 },
+  },
+};
+
+// Configuração: aplicar tabela de frete? (default: true, persistido via localStorage)
+let aplicarTabelaFrete = true;
+
+// Peso médio padrão (gramas) usado quando o pedido não tem peso preenchido
+let pesoMedioPadrao = 1000; // 1kg
+
+// Carrega configurações do localStorage
+function carregarTabelaFrete() {
+  try {
+    const flag = localStorage.getItem('margemml_aplicar_tabela_frete');
+    if (flag !== null) aplicarTabelaFrete = flag === 'true';
+    const peso = localStorage.getItem('margemml_peso_medio_padrao');
+    if (peso !== null) {
+      const v = parseInt(peso);
+      if (v > 0 && v <= 30000) pesoMedioPadrao = v;
+    }
+  } catch (e) {}
+}
+
+// ---- Funções utilitárias ----
+
+// Detecta se um CEP é capital. Recebe CEP só com dígitos (5 ou 8).
+// Retorna true se for capital do estado uf.
+function cepEhCapital(cep, uf) {
+  if (!cep || !uf) return false;
+  const cep5 = String(cep).replace(/\D/g, '').slice(0, 5);
+  if (cep5.length < 5) return false;
+  const faixas = CEPS_CAPITAIS[uf];
+  if (!faixas) return false;
+  for (const [de, ate] of faixas) {
+    if (cep5 >= de && cep5 <= ate) return true;
+  }
+  return false;
+}
+
+// Detecta se o CEP é "Pres. Prudente local" (190xx-xxx)
+function cepEhPresPrudenteLocal(cep) {
+  if (!cep) return false;
+  const cep5 = String(cep).replace(/\D/g, '').slice(0, 5);
+  if (cep5.length < 5) return false;
+  return cep5 >= '19000' && cep5 <= '19099';
+}
+
+// Identifica a "zona" da tabela de preços a partir de uf e cep
+function identificarZona(servico, uf, cep) {
+  // SEDEX: tem zona LOCAL (Pres. Prudente)
+  if (servico === 'SEDEX' && cepEhPresPrudenteLocal(cep)) return 'PP_LOCAL';
+  // SP estadual (qualquer destino em SP, sem distinguir capital/interior)
+  if (uf === 'SP') return 'SP_ESTADUAL';
+  // Outras zonas: precisa do mapeamento UF → zona numerada
+  const zona = UF_PARA_ZONA[uf];
+  if (!zona || zona === 'SP') return null;
+  // Distinção capital × interior
+  const sufixo = cepEhCapital(cep, uf) ? 'CAP' : 'INT';
+  return `${zona}_${sufixo}`;
+}
+
+// Detecta se o serviço do pedido é PAC ou SEDEX a partir do nome
+function detectarServico(servicoTransporte) {
+  if (!servicoTransporte) return null;
+  const s = String(servicoTransporte).toUpperCase();
+  if (s.includes('SEDEX')) return 'SEDEX';
+  if (s.includes('PAC')) return 'PAC';
+  return null;
+}
+
+// Encontra a faixa de peso adequada
+function identificarFaixaPeso(pesoGramas) {
+  if (!pesoGramas || pesoGramas <= 0) return null;
+  for (const f of FAIXAS_PESO) {
+    if (pesoGramas <= f.ate) return f.id;
+  }
+  return null; // Acima de 10kg — calcular com adicional
+}
+
+// FUNÇÃO PRINCIPAL: calcula o custo real do frete pra um pedido
+// usando a tabela do contrato.
 function calcularFreteCorreios(pedido) {
-  if (!aplicarTabelaFrete) return 0;
-  // Tenta pegar o UF do cliente do JSON do Bling.
-  // Caminho: pedido.transporte.etiqueta.uf
-  const uf = (pedido?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
-  if (!uf || uf.length !== 2) return 0;
-  return tabelaFrete[uf] || 0;
+  if (!aplicarTabelaFrete) return { valor: 0, detalhes: null };
+
+  const uf = (pedido?.ufCliente || pedido?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
+  const cep = (pedido?.cepCliente || pedido?.transporte?.etiqueta?.cep || '').replace(/\D/g, '');
+  const servicoNome = pedido?.servicoTransporte || pedido?.transporte?.volumes?.[0]?.servico || '';
+  const servico = detectarServico(servicoNome);
+
+  // Peso: prefere o do pedido, senão usa o padrão configurável
+  let pesoGramas = 0;
+  if (pedido?.transporte?.pesoBruto) {
+    // pesoBruto vem em KG no Bling; converte
+    pesoGramas = parseFloat(pedido.transporte.pesoBruto) * 1000;
+  }
+  if (pesoGramas <= 0 && pedido?.pesoBruto) {
+    pesoGramas = parseFloat(pedido.pesoBruto) * 1000;
+  }
+  if (pesoGramas <= 0) {
+    pesoGramas = pesoMedioPadrao; // fallback
+  }
+
+  if (!servico || !uf || uf.length !== 2) return { valor: 0, detalhes: null };
+
+  const zona = identificarZona(servico, uf, cep);
+  if (!zona) return { valor: 0, detalhes: null };
+
+  const tabelaServico = TABELA_CORREIOS[servico];
+  if (!tabelaServico || !tabelaServico[zona]) return { valor: 0, detalhes: null };
+
+  const cfg = tabelaServico[zona];
+  let valor = 0;
+
+  if (pesoGramas <= 10000) {
+    const faixaId = identificarFaixaPeso(pesoGramas);
+    valor = cfg.faixas[faixaId] || 0;
+  } else {
+    // Acima de 10kg: 10kg + adicional por kg
+    const base = cfg.faixas['p10000'] || 0;
+    const kgExtras = Math.ceil((pesoGramas - 10000) / 1000);
+    valor = base + (kgExtras * cfg.adicional);
+  }
+
+  return {
+    valor: parseFloat(valor.toFixed(2)),
+    detalhes: { servico, uf, cep, pesoGramas, zona },
+  };
 }
 
 // ============================================================
-// =========== FIM TABELA DE FRETE POR UF =====================
+// =========== FIM TABELA CORREIOS ============================
 // ============================================================
+
 
 
 // ============================================================
@@ -1524,6 +1694,9 @@ async function init() {
     }
     if (serverConfigs.aplicar_tabela_frete !== undefined) {
       localStorage.setItem('margemml_aplicar_tabela_frete', String(serverConfigs.aplicar_tabela_frete));
+    }
+    if (serverConfigs.peso_medio_padrao !== undefined) {
+      localStorage.setItem('margemml_peso_medio_padrao', String(serverConfigs.peso_medio_padrao));
     }
     showSaveStatus('✓ Configurações sincronizadas');
   } else if (!serverOnline) {
@@ -1924,71 +2097,42 @@ function resetTaxasPagamento() {
 }
 
 // ============================================================
-// =========== UI DA TABELA DE FRETE ==========================
+// =========== UI DO FRETE CORREIOS ===========================
 // ============================================================
 function renderTabelaFrete() {
-  const container = document.getElementById('tabelaFreteContainer');
-  if (!container) return;
-
+  // Renderiza apenas o estado dos inputs (checkbox + peso médio).
   const checkbox = document.getElementById('aplicarTabelaFrete');
   if (checkbox) checkbox.checked = aplicarTabelaFrete;
-
-  // Renderiza a tabela agrupada por região
-  let html = '<div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));gap:14px;">';
-
-  UFS_POR_REGIAO.forEach(grupo => {
-    html += `<div style="background:rgba(0,0,0,0.15);border:1px solid var(--border);border-radius:6px;padding:10px;">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1.5px;">${grupo.regiao}</div>
-      <table style="width:100%;border-collapse:collapse;">`;
-    grupo.ufs.forEach(uf => {
-      const valor = tabelaFrete[uf] != null ? tabelaFrete[uf] : 0;
-      html += `<tr>
-        <td style="padding:4px 6px;font-family:var(--mono);font-size:12px;color:var(--text2);width:36px;">${uf}</td>
-        <td style="padding:4px 6px;">
-          <div class="iw" style="margin:0;">
-            <span class="pre">R$</span>
-            <input type="number" min="0" step="0.01" id="frete_uf_${uf}" value="${valor.toFixed(2)}" style="width:100%;" />
-          </div>
-        </td>
-      </tr>`;
-    });
-    html += `</table></div>`;
-  });
-
-  html += '</div>';
-  container.innerHTML = html;
+  const peso = document.getElementById('pesoMedioPadrao');
+  if (peso) peso.value = pesoMedioPadrao;
 }
 
 function toggleAplicarTabelaFrete() {
   const checkbox = document.getElementById('aplicarTabelaFrete');
   aplicarTabelaFrete = !!(checkbox && checkbox.checked);
-  // Salva imediatamente o flag (e re-renderiza pra recalcular)
   localStorage.setItem('margemml_aplicar_tabela_frete', String(aplicarTabelaFrete));
 }
 
-async function salvarTabelaFrete() {
-  // Lê todos os inputs e atualiza a tabela em memória
-  const nova = {};
-  Object.keys(TABELA_FRETE_PADRAO).forEach(uf => {
-    const inp = document.getElementById('frete_uf_' + uf);
-    if (inp) nova[uf] = parseFloat(inp.value) || 0;
-  });
-  tabelaFrete = nova;
-
-  // Lê o checkbox
+async function salvarConfigFrete() {
   const checkbox = document.getElementById('aplicarTabelaFrete');
   aplicarTabelaFrete = !!(checkbox && checkbox.checked);
 
+  const pesoInput = document.getElementById('pesoMedioPadrao');
+  if (pesoInput) {
+    const v = parseInt(pesoInput.value);
+    if (v > 0 && v <= 30000) pesoMedioPadrao = v;
+  }
+
   // 1. localStorage (cache local)
-  localStorage.setItem('margemml_tabela_frete', JSON.stringify(tabelaFrete));
   localStorage.setItem('margemml_aplicar_tabela_frete', String(aplicarTabelaFrete));
+  localStorage.setItem('margemml_peso_medio_padrao', String(pesoMedioPadrao));
 
   // 2. Servidor (sincroniza)
-  const okTabela = await saveConfigToServer('tabela_frete', tabelaFrete);
   const okFlag = await saveConfigToServer('aplicar_tabela_frete', aplicarTabelaFrete);
+  const okPeso = await saveConfigToServer('peso_medio_padrao', pesoMedioPadrao);
 
-  if (okTabela && okFlag) {
-    showSaveStatus('✓ Tabela de frete salva no servidor');
+  if (okFlag && okPeso) {
+    showSaveStatus('✓ Configurações de frete salvas');
   } else {
     showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
   }
@@ -1998,15 +2142,8 @@ async function salvarTabelaFrete() {
   updateChartsFromData();
 }
 
-function resetTabelaFrete() {
-  if (!confirm('Restaurar todos os valores padrão da tabela de frete?')) return;
-  tabelaFrete = {...TABELA_FRETE_PADRAO};
-  localStorage.removeItem('margemml_tabela_frete');
-  renderTabelaFrete();
-}
-
 // ============================================================
-// =========== FIM UI DA TABELA DE FRETE ======================
+// =========== FIM UI DO FRETE CORREIOS =======================
 // ============================================================
 
 async function testarConexao() {
@@ -2223,29 +2360,33 @@ function mapBlingPedido(p) {
 
   // Frete: prioridade
   // 1. p.custoFreteML (custo real do vendedor que vem da API do Bling/marketplaces)
-  // 2. p.transporte.frete (valor já gravado no pedido)
-  // 3. Se ambos forem 0 e o pedido tem UF do cliente: usa tabela de frete dos Correios
+  // 2. p.freteCobrado (valor que cliente pagou de frete, vindo do detalhe do pedido)
+  // 3. p.transporte.frete (fallback antigo, caso servidor velho)
+  // 4. Se ambos forem 0 e o pedido tem UF do cliente: usa tabela de frete dos Correios
   let frete = 0;
   let freteOrigem = 'estimado'; // 'real' (API), 'tabela' (UF), 'zero'
+  let freteDetalhes = null;
+  const freteCobrado = (p.freteCobrado != null ? p.freteCobrado : (p.transporte?.frete || 0));
   if (p.custoFreteML !== null && p.custoFreteML !== undefined && p.custoFreteML > 0) {
     frete = p.custoFreteML;
     freteOrigem = 'real';
-  } else if (p.transporte?.frete > 0) {
-    frete = +p.transporte.frete;
+  } else if (freteCobrado > 0) {
+    frete = freteCobrado;
     freteOrigem = 'real';
   } else {
     // Frete zerado no Bling: provavelmente frete grátis pago pela empresa.
-    // Aplica tabela de UF se configurada.
-    const freteTabela = calcularFreteCorreios(p);
-    if (freteTabela > 0) {
-      frete = freteTabela;
+    // Aplica tabela do contrato Correios.
+    const calc = calcularFreteCorreios(p);
+    if (calc.valor > 0) {
+      frete = calc.valor;
       freteOrigem = 'tabela';
+      freteDetalhes = calc.detalhes;
     } else {
       freteOrigem = 'zero';
     }
   }
 
-  const ufCliente = (p?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
+  const ufCliente = (p?.ufCliente || p?.transporte?.etiqueta?.uf || '').toUpperCase().trim();
 
   const outrasDespesas = p.outrasDespesas || 0;
 
@@ -2262,6 +2403,7 @@ function mapBlingPedido(p) {
     taxaTrayReal,  // true se taxaTray veio da API do Bling
     frete,
     freteOrigem,
+    freteDetalhes,
     ufCliente,
     outrasDespesas,
     canal: p.canal || 'Outros',
@@ -2443,11 +2585,15 @@ function openModal(num) {
     <div class="brow">
       <span class="brow-label">🚚 ${
         m.freteOrigem === 'real' ? 'Frete (custo real)'
-        : m.freteOrigem === 'tabela' ? `Frete (estim. tabela ${m.ufCliente || ''})`
+        : m.freteOrigem === 'tabela' ? `Frete ${m.freteDetalhes ? `(${m.freteDetalhes.servico} ${m.ufCliente || ''})` : `(estim. tabela ${m.ufCliente || ''})`}`
         : 'Frete (custo vendedor)'
       }</span>
       <span class="brow-val neg">– ${formatMoney(m.frete)}</span>
-    </div>
+    </div>${m.freteOrigem === 'tabela' && m.freteDetalhes ? `
+    <div class="brow" style="margin-top:-6px;padding-top:0;border:0;font-size:11px;color:var(--text3);">
+      <span class="brow-label" style="padding-left:24px;">└─ ${m.freteDetalhes.servico} · ${(m.freteDetalhes.pesoGramas/1000).toFixed(2)}kg · zona ${m.freteDetalhes.zona.replace('_', ' ')}</span>
+      <span></span>
+    </div>` : ''}
     ${m.outrasDespesas > 0 ? `<div class="brow">
       <span class="brow-label">➕ Outras despesas</span>
       <span class="brow-val neg">– ${formatMoney(m.outrasDespesas)}</span>
