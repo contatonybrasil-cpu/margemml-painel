@@ -1185,7 +1185,8 @@ const TAXAS_CANAL = {
     // ============================================================
     // Taxas Mercado Pago (Proposta Comercial NY — plano D0 imediato)
     // Usado pra pedidos a partir de 08/05/2026
-    // Boleto: R$ 3,00 fixo · PIX: 0,80% · Crédito por parcela (D0)
+    // Boleto: R$ 3,00 fixo · PIX: 0,80%
+    // Crédito: taxa POR PARCELA (1x até 12x), igual pra todas bandeiras
     // ============================================================
     taxasMercadoPago: {
       'pix':    { pct: 0.80, fixo: 0 },         // Pix: 0,80%
@@ -1199,36 +1200,20 @@ const TAXAS_CANAL = {
         'diners':     { pct: 0, fixo: 0 },
         'hipercard':  { pct: 0, fixo: 0 },
       },
-      // Crédito (D0 — recebe na hora): taxa única, independente de bandeira
-      // MP cobra a mesma taxa pra todas bandeiras dentro de cada faixa de parcelas
-      'credito_1x': {
-        'visa':       { pct: 4.25, fixo: 0 },
-        'mastercard': { pct: 4.25, fixo: 0 },
-        'elo':        { pct: 4.25, fixo: 0 },
-        'amex':       { pct: 4.25, fixo: 0 },
-        'diners':     { pct: 4.25, fixo: 0 },
-        'hipercard':  { pct: 4.25, fixo: 0 },
-      },
-      // 2 a 6x: usamos a média ponderada da tabela MP (7,17 / 7,91 / 8,71 / 9,47 / 10,21)
-      // Como exibimos uma única faixa, mantemos 7,17% (2x) como referência base
-      // Idealmente cada parcela teria sua taxa, mas a estrutura atual agrupa por faixa
-      'credito_2_6x': {
-        'visa':       { pct: 7.17, fixo: 0 },
-        'mastercard': { pct: 7.17, fixo: 0 },
-        'elo':        { pct: 7.17, fixo: 0 },
-        'amex':       { pct: 7.17, fixo: 0 },
-        'diners':     { pct: 7.17, fixo: 0 },
-        'hipercard':  { pct: 7.17, fixo: 0 },
-      },
-      // 7 a 12x: também faixa única (referência 10,87% = 7x; até 14,94% em 12x)
-      'credito_7_12x': {
-        'visa':       { pct: 10.87, fixo: 0 },
-        'mastercard': { pct: 10.87, fixo: 0 },
-        'elo':        { pct: 10.87, fixo: 0 },
-        'amex':       { pct: 10.87, fixo: 0 },
-        'diners':     { pct: 10.87, fixo: 0 },
-        'hipercard':  { pct: 10.87, fixo: 0 },
-      },
+      // Crédito (D0 — recebe na hora): taxa por parcela (NÃO por bandeira)
+      // Mas mantemos estrutura por bandeira pra a UI ser consistente com Cielo.
+      'credito_1x':  { 'visa':{pct:4.25,fixo:0},'mastercard':{pct:4.25,fixo:0},'elo':{pct:4.25,fixo:0},'amex':{pct:4.25,fixo:0},'diners':{pct:4.25,fixo:0},'hipercard':{pct:4.25,fixo:0} },
+      'credito_2x':  { 'visa':{pct:7.17,fixo:0},'mastercard':{pct:7.17,fixo:0},'elo':{pct:7.17,fixo:0},'amex':{pct:7.17,fixo:0},'diners':{pct:7.17,fixo:0},'hipercard':{pct:7.17,fixo:0} },
+      'credito_3x':  { 'visa':{pct:7.91,fixo:0},'mastercard':{pct:7.91,fixo:0},'elo':{pct:7.91,fixo:0},'amex':{pct:7.91,fixo:0},'diners':{pct:7.91,fixo:0},'hipercard':{pct:7.91,fixo:0} },
+      'credito_4x':  { 'visa':{pct:8.71,fixo:0},'mastercard':{pct:8.71,fixo:0},'elo':{pct:8.71,fixo:0},'amex':{pct:8.71,fixo:0},'diners':{pct:8.71,fixo:0},'hipercard':{pct:8.71,fixo:0} },
+      'credito_5x':  { 'visa':{pct:9.47,fixo:0},'mastercard':{pct:9.47,fixo:0},'elo':{pct:9.47,fixo:0},'amex':{pct:9.47,fixo:0},'diners':{pct:9.47,fixo:0},'hipercard':{pct:9.47,fixo:0} },
+      'credito_6x':  { 'visa':{pct:10.21,fixo:0},'mastercard':{pct:10.21,fixo:0},'elo':{pct:10.21,fixo:0},'amex':{pct:10.21,fixo:0},'diners':{pct:10.21,fixo:0},'hipercard':{pct:10.21,fixo:0} },
+      'credito_7x':  { 'visa':{pct:10.87,fixo:0},'mastercard':{pct:10.87,fixo:0},'elo':{pct:10.87,fixo:0},'amex':{pct:10.87,fixo:0},'diners':{pct:10.87,fixo:0},'hipercard':{pct:10.87,fixo:0} },
+      'credito_8x':  { 'visa':{pct:11.73,fixo:0},'mastercard':{pct:11.73,fixo:0},'elo':{pct:11.73,fixo:0},'amex':{pct:11.73,fixo:0},'diners':{pct:11.73,fixo:0},'hipercard':{pct:11.73,fixo:0} },
+      'credito_9x':  { 'visa':{pct:12.59,fixo:0},'mastercard':{pct:12.59,fixo:0},'elo':{pct:12.59,fixo:0},'amex':{pct:12.59,fixo:0},'diners':{pct:12.59,fixo:0},'hipercard':{pct:12.59,fixo:0} },
+      'credito_10x': { 'visa':{pct:13.21,fixo:0},'mastercard':{pct:13.21,fixo:0},'elo':{pct:13.21,fixo:0},'amex':{pct:13.21,fixo:0},'diners':{pct:13.21,fixo:0},'hipercard':{pct:13.21,fixo:0} },
+      'credito_11x': { 'visa':{pct:14.07,fixo:0},'mastercard':{pct:14.07,fixo:0},'elo':{pct:14.07,fixo:0},'amex':{pct:14.07,fixo:0},'diners':{pct:14.07,fixo:0},'hipercard':{pct:14.07,fixo:0} },
+      'credito_12x': { 'visa':{pct:14.94,fixo:0},'mastercard':{pct:14.94,fixo:0},'elo':{pct:14.94,fixo:0},'amex':{pct:14.94,fixo:0},'diners':{pct:14.94,fixo:0},'hipercard':{pct:14.94,fixo:0} },
     },
     // Data de corte: a partir desta data (ISO YYYY-MM-DD), usa Mercado Pago.
     // Antes, usa Cielo. Pedidos com gatewayPagamento explícito do servidor
@@ -1853,7 +1838,10 @@ function labelMetodo(metodo, bandeira, numParcelas) {
   if (metodo === 'pix') return 'Pix';
   if (metodo === 'boleto') return 'Boleto';
   if (metodo === 'debito') return 'Débito' + (bandeiraNome ? ' · ' + bandeiraNome : '');
-  if (metodo === 'credito_1x') return 'Crédito 1x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  // credito_Nx exato (1 a 12)
+  const mEx = String(metodo).match(/^credito_(\d+)x$/);
+  if (mEx) return 'Crédito ' + mEx[1] + 'x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
+  // Faixas antigas (compat com cache velho)
   if (metodo === 'credito_2_6x') return 'Crédito ' + (numParcelas || '2-6') + 'x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
   if (metodo === 'credito_7_12x') return 'Crédito ' + (numParcelas || '7-12') + 'x' + (bandeiraNome ? ' · ' + bandeiraNome : '');
   if (metodo === 'dinheiro') return 'Dinheiro';
@@ -2061,12 +2049,34 @@ const BANDEIRAS = [
   { id: 'hipercard',  nome: 'Hipercard' },
 ];
 
-const METODOS_CARTAO = [
+// Cielo: 4 colunas (Débito + 3 faixas de crédito)
+const METODOS_CARTAO_CIELO = [
   { id: 'debito',        label: 'Débito' },
   { id: 'credito_1x',    label: 'Crédito 1x' },
   { id: 'credito_2_6x',  label: 'Crédito 2-6x' },
   { id: 'credito_7_12x', label: 'Crédito 7-12x' },
 ];
+
+// Mercado Pago: 13 colunas (Débito + 12 parcelas individuais)
+const METODOS_CARTAO_MP = [
+  { id: 'debito',     label: 'Débito' },
+  { id: 'credito_1x',  label: '1x' },
+  { id: 'credito_2x',  label: '2x' },
+  { id: 'credito_3x',  label: '3x' },
+  { id: 'credito_4x',  label: '4x' },
+  { id: 'credito_5x',  label: '5x' },
+  { id: 'credito_6x',  label: '6x' },
+  { id: 'credito_7x',  label: '7x' },
+  { id: 'credito_8x',  label: '8x' },
+  { id: 'credito_9x',  label: '9x' },
+  { id: 'credito_10x', label: '10x' },
+  { id: 'credito_11x', label: '11x' },
+  { id: 'credito_12x', label: '12x' },
+];
+
+// Compatibilidade: METODOS_CARTAO ainda usado em pontos esparsos do código.
+// É reescrito conforme o gateway em edição (vê trocarGatewayEdicao).
+let METODOS_CARTAO = METODOS_CARTAO_CIELO;
 
 // Estado: qual gateway está sendo editado atualmente na UI ('cielo' ou 'mercado_pago')
 let gatewayEdicao = 'cielo';
@@ -2094,6 +2104,11 @@ function renderTaxasPagamento() {
   const tp = (gatewayEdicao === 'mercado_pago')
     ? (siteCfg.taxasMercadoPago || {})
     : (siteCfg.taxasPagamento || {});
+
+  // Escolhe quais colunas exibir: Cielo (4) ou MP (13)
+  METODOS_CARTAO = (gatewayEdicao === 'mercado_pago')
+    ? METODOS_CARTAO_MP
+    : METODOS_CARTAO_CIELO;
 
   // 1) Tray + bandeira padrão + data de corte
   const inpTray = document.getElementById('tp_tray_pct');
@@ -2130,7 +2145,17 @@ function renderTaxasPagamento() {
     }).join('');
   }
 
-  // 3) Matriz bandeira × método cartão
+  // 3) Header da matriz cartões (regenera porque mudou de 4 pra 13 colunas)
+  const matrizTable = document.getElementById('taxasMatrizBody')?.closest('table');
+  if (matrizTable) {
+    const thead = matrizTable.querySelector('thead tr');
+    if (thead) {
+      thead.innerHTML = '<th style="width:140px;">Bandeira</th>' +
+        METODOS_CARTAO.map(m => `<th>${m.label}</th>`).join('');
+    }
+  }
+
+  // 4) Matriz bandeira × método cartão
   const bodyMatriz = document.getElementById('taxasMatrizBody');
   if (bodyMatriz) {
     bodyMatriz.innerHTML = BANDEIRAS.map(b => {
@@ -2440,11 +2465,26 @@ function mapBlingPedido(p) {
       ? (taxaCfg.taxasMercadoPago || {})
       : (taxaCfg.taxasPagamento || {});
 
-    const metodo = p.metodoPagamento;
     const bandeira = p.bandeiraPagamento || taxaCfg.bandeiraPadrao || 'mastercard';
 
     // Tray sempre aplica sobre qualquer venda do site (independente do gateway)
     const taxaTray = venda * (taxaCfg.pct || 0) / 100;
+
+    // Resolve o método de pagamento de acordo com o gateway:
+    // - Servidor sempre detecta credito_Nx exato (1 a 12)
+    // - MP: usa direto a parcela exata (credito_3x → 7,91%)
+    // - Cielo: agrupa em faixa (credito_1x, credito_2_6x, credito_7_12x)
+    let metodo = p.metodoPagamento;
+    if (gateway === 'cielo' && metodo && metodo.startsWith('credito_')) {
+      const m = metodo.match(/^credito_(\d+)x$/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n === 1) metodo = 'credito_1x';
+        else if (n <= 6) metodo = 'credito_2_6x';
+        else metodo = 'credito_7_12x';
+      }
+      // Compat com nomes antigos (credito_2_6x / credito_7_12x) se vier do cache
+    }
 
     // Taxa Gateway (Cielo ou MP) depende do método de pagamento
     let taxaGatewayCalc = 0;
@@ -2467,6 +2507,7 @@ function mapBlingPedido(p) {
       tray: taxaTray,
       gateway: taxaGatewayCalc,
       gatewayUsado: gateway, // 'cielo' ou 'mercado_pago'
+      metodoUsado: metodo,   // método resolvido (com agrupamento se Cielo)
     };
   }
 
