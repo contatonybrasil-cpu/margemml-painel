@@ -888,11 +888,23 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
         </div>
       </div>
 
-      <!-- CARD: Taxas Cielo por bandeira x método + Pix + Boleto + Tray -->
+      <!-- CARD: Taxas Cielo + Mercado Pago (bandeira × método) + Tray -->
       <div class="cfg-card" style="margin-top:14px;">
-        <div class="cfg-title">Site — Cielo (bandeira × método) + Tray</div>
+        <div class="cfg-title">Site — Cielo / Mercado Pago + Tray</div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div style="margin-bottom:14px;padding:10px;background:rgba(6,182,212,0.05);border:1px solid var(--border);border-radius:6px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px;">Editando taxas de:</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn" id="btnGwCielo" onclick="trocarGatewayEdicao('cielo')">💳 Cielo (até 07/05/2026)</button>
+            <button class="btn" id="btnGwMp" onclick="trocarGatewayEdicao('mercado_pago')">💰 Mercado Pago (a partir de 08/05/2026)</button>
+            <span style="margin-left:auto;font-size:11px;color:var(--text2);" id="gwEditandoLabel">Editando: <strong>Cielo</strong></span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:8px;">
+            ℹ️ Pedidos com gateway detectado pela observação do Bling têm prioridade. Pedidos sem detecção usam a data de corte abaixo.
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
           <div class="field" style="margin-bottom:0;">
             <label>Tray — taxa sobre toda venda (%)</label>
             <div class="iw"><span class="pre">%</span><input type="number" min="0" step="0.01" id="tp_tray_pct" /></div>
@@ -907,6 +919,10 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
               <option value="diners">Diners</option>
               <option value="hipercard">Hipercard</option>
             </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Data corte Cielo → MP (ISO)</label>
+            <input type="date" id="tp_data_corte_gateway" />
           </div>
         </div>
 
@@ -939,7 +955,7 @@ label { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spac
           <button class="btn btn-ghost" onclick="resetTaxasPagamento()">Restaurar padrões</button>
         </div>
         <div class="nota">
-          <strong>Site (Tray + Cielo):</strong> a <strong>Tray</strong> cobra 1% sobre toda venda (acima); a <strong>Cielo</strong> cobra conforme o método e a bandeira do cartão. Quando a bandeira do pedido não for identificada, usa a bandeira padrão acima.
+          <strong>Site (Tray + Cielo + MP):</strong> a <strong>Tray</strong> cobra 1% sobre toda venda; o <strong>Gateway</strong> (Cielo ou MP) cobra conforme método/bandeira. Use os botões acima pra alternar entre as 2 tabelas. A data de corte define o gateway de pedidos sem detecção explícita.
         </div>
       </div>
 
@@ -1128,6 +1144,7 @@ const TAXAS_CANAL = {
     fixo: 0,
     minFixo: 0,
     // Taxas Cielo por bandeira × método (valores reais do painel Cielo 19/04/2026)
+    // Usado pra pedidos ATÉ 07/05/2026
     taxasPagamento: {
       'pix':    { pct: 0.80, fixo: 0 },         // Pix: 0,80%
       'boleto': { pct: 0,    fixo: 1.99 },      // Boleto: R$ 1,99 fixo por pedido
@@ -1165,8 +1182,60 @@ const TAXAS_CANAL = {
         'hipercard':  { pct: 3.89, fixo: 0 },
       },
     },
+    // ============================================================
+    // Taxas Mercado Pago (Proposta Comercial NY — plano D0 imediato)
+    // Usado pra pedidos a partir de 08/05/2026
+    // Boleto: R$ 3,00 fixo · PIX: 0,80% · Crédito por parcela (D0)
+    // ============================================================
+    taxasMercadoPago: {
+      'pix':    { pct: 0.80, fixo: 0 },         // Pix: 0,80%
+      'boleto': { pct: 0,    fixo: 3.00 },      // Boleto: R$ 3,00 fixo
+      // Débito: MP não foi configurado pra débito (não aceita débito no site)
+      'debito': {
+        'visa':       { pct: 0, fixo: 0 },
+        'mastercard': { pct: 0, fixo: 0 },
+        'elo':        { pct: 0, fixo: 0 },
+        'amex':       { pct: 0, fixo: 0 },
+        'diners':     { pct: 0, fixo: 0 },
+        'hipercard':  { pct: 0, fixo: 0 },
+      },
+      // Crédito (D0 — recebe na hora): taxa única, independente de bandeira
+      // MP cobra a mesma taxa pra todas bandeiras dentro de cada faixa de parcelas
+      'credito_1x': {
+        'visa':       { pct: 4.25, fixo: 0 },
+        'mastercard': { pct: 4.25, fixo: 0 },
+        'elo':        { pct: 4.25, fixo: 0 },
+        'amex':       { pct: 4.25, fixo: 0 },
+        'diners':     { pct: 4.25, fixo: 0 },
+        'hipercard':  { pct: 4.25, fixo: 0 },
+      },
+      // 2 a 6x: usamos a média ponderada da tabela MP (7,17 / 7,91 / 8,71 / 9,47 / 10,21)
+      // Como exibimos uma única faixa, mantemos 7,17% (2x) como referência base
+      // Idealmente cada parcela teria sua taxa, mas a estrutura atual agrupa por faixa
+      'credito_2_6x': {
+        'visa':       { pct: 7.17, fixo: 0 },
+        'mastercard': { pct: 7.17, fixo: 0 },
+        'elo':        { pct: 7.17, fixo: 0 },
+        'amex':       { pct: 7.17, fixo: 0 },
+        'diners':     { pct: 7.17, fixo: 0 },
+        'hipercard':  { pct: 7.17, fixo: 0 },
+      },
+      // 7 a 12x: também faixa única (referência 10,87% = 7x; até 14,94% em 12x)
+      'credito_7_12x': {
+        'visa':       { pct: 10.87, fixo: 0 },
+        'mastercard': { pct: 10.87, fixo: 0 },
+        'elo':        { pct: 10.87, fixo: 0 },
+        'amex':       { pct: 10.87, fixo: 0 },
+        'diners':     { pct: 10.87, fixo: 0 },
+        'hipercard':  { pct: 10.87, fixo: 0 },
+      },
+    },
+    // Data de corte: a partir desta data (ISO YYYY-MM-DD), usa Mercado Pago.
+    // Antes, usa Cielo. Pedidos com gatewayPagamento explícito do servidor
+    // (detectado pela obs) sempre prevalecem sobre a data de corte.
+    dataCorteGateway: '2026-05-08',
     bandeiraPadrao: 'mastercard',  // usada quando o pedido não identificar bandeira
-  }, // Site (Tray 1% + Cielo por bandeira)
+  }, // Site (Tray 1% + Cielo até 07/05 + Mercado Pago a partir de 08/05)
   '203654110': { pct: 0,  fixo: 0,    minFixo: 0  }, // Parque do Povo
   '203777302': { pct: 0,  fixo: 0,    minFixo: 0  }, // Prudenshopping
 };
@@ -1968,13 +2037,15 @@ function carregarTaxasCanal() {
   // Restaurar taxasPagamento salvas (agora inclui pct da Tray + bandeiraPadrao + tabela)
   const savedPag = JSON.parse(localStorage.getItem('margemml_taxas_pagamento_site') || 'null');
   if (savedPag && TAXAS_CANAL['205389906']) {
-    // Formato NOVO: { pct, bandeiraPadrao, taxasPagamento }
-    if (savedPag.taxasPagamento) {
-      TAXAS_CANAL['205389906'].pct = savedPag.pct ?? TAXAS_CANAL['205389906'].pct;
-      TAXAS_CANAL['205389906'].bandeiraPadrao = savedPag.bandeiraPadrao || TAXAS_CANAL['205389906'].bandeiraPadrao;
-      TAXAS_CANAL['205389906'].taxasPagamento = savedPag.taxasPagamento;
+    // Formato NOVO: { pct, bandeiraPadrao, taxasPagamento, taxasMercadoPago, dataCorteGateway }
+    if (savedPag.taxasPagamento || savedPag.taxasMercadoPago) {
+      if (savedPag.pct !== undefined) TAXAS_CANAL['205389906'].pct = savedPag.pct;
+      if (savedPag.bandeiraPadrao)    TAXAS_CANAL['205389906'].bandeiraPadrao = savedPag.bandeiraPadrao;
+      if (savedPag.dataCorteGateway)  TAXAS_CANAL['205389906'].dataCorteGateway = savedPag.dataCorteGateway;
+      if (savedPag.taxasPagamento)    TAXAS_CANAL['205389906'].taxasPagamento = savedPag.taxasPagamento;
+      if (savedPag.taxasMercadoPago)  TAXAS_CANAL['205389906'].taxasMercadoPago = savedPag.taxasMercadoPago;
     } else {
-      // Formato ANTIGO: objeto direto de taxas → mantém compat
+      // Formato ANTIGO: objeto direto de taxas → mantém compat (assume Cielo)
       TAXAS_CANAL['205389906'].taxasPagamento = savedPag;
     }
   }
@@ -1997,15 +2068,50 @@ const METODOS_CARTAO = [
   { id: 'credito_7_12x', label: 'Crédito 7-12x' },
 ];
 
+// Estado: qual gateway está sendo editado atualmente na UI ('cielo' ou 'mercado_pago')
+let gatewayEdicao = 'cielo';
+
+function trocarGatewayEdicao(g) {
+  if (g !== 'cielo' && g !== 'mercado_pago') return;
+  gatewayEdicao = g;
+  // Atualiza visual dos botões (destaque no ativo)
+  const btnCielo = document.getElementById('btnGwCielo');
+  const btnMp = document.getElementById('btnGwMp');
+  if (btnCielo) btnCielo.className = 'btn' + (g === 'cielo' ? ' btn-cyan' : '');
+  if (btnMp) btnMp.className = 'btn' + (g === 'mercado_pago' ? ' btn-cyan' : '');
+  // Label "Editando: X"
+  const label = document.getElementById('gwEditandoLabel');
+  if (label) {
+    label.innerHTML = 'Editando: <strong>' + (g === 'mercado_pago' ? 'Mercado Pago' : 'Cielo') + '</strong>';
+  }
+  // Re-renderiza as tabelas com os valores do gateway selecionado
+  renderTaxasPagamento();
+}
+
 function renderTaxasPagamento() {
   const siteCfg = TAXAS_CANAL['205389906'] || {};
-  const tp = siteCfg.taxasPagamento || {};
+  // Escolhe qual tabela editar: Cielo (taxasPagamento) ou MP (taxasMercadoPago)
+  const tp = (gatewayEdicao === 'mercado_pago')
+    ? (siteCfg.taxasMercadoPago || {})
+    : (siteCfg.taxasPagamento || {});
 
-  // 1) Tray + bandeira padrão
+  // 1) Tray + bandeira padrão + data de corte
   const inpTray = document.getElementById('tp_tray_pct');
   if (inpTray) inpTray.value = siteCfg.pct ?? 1;
   const selBand = document.getElementById('tp_bandeira_padrao');
   if (selBand) selBand.value = siteCfg.bandeiraPadrao || 'mastercard';
+  const inpCorte = document.getElementById('tp_data_corte_gateway');
+  if (inpCorte) inpCorte.value = siteCfg.dataCorteGateway || '2026-05-08';
+
+  // Estado visual dos botões
+  const btnCielo = document.getElementById('btnGwCielo');
+  const btnMp = document.getElementById('btnGwMp');
+  if (btnCielo) btnCielo.className = 'btn' + (gatewayEdicao === 'cielo' ? ' btn-cyan' : '');
+  if (btnMp) btnMp.className = 'btn' + (gatewayEdicao === 'mercado_pago' ? ' btn-cyan' : '');
+  const label = document.getElementById('gwEditandoLabel');
+  if (label) {
+    label.innerHTML = 'Editando: <strong>' + (gatewayEdicao === 'mercado_pago' ? 'Mercado Pago' : 'Cielo') + '</strong>';
+  }
 
   // 2) Pix + Boleto (taxas únicas)
   const simples = [
@@ -2041,11 +2147,13 @@ async function salvarTaxasPagamento() {
   const siteCfg = TAXAS_CANAL['205389906'];
   if (!siteCfg) return;
 
-  // Tray + padrão
+  // Tray + padrão + data de corte (compartilhados entre os 2 gateways)
   const inpTray = document.getElementById('tp_tray_pct');
   if (inpTray) siteCfg.pct = +inpTray.value || 0;
   const selBand = document.getElementById('tp_bandeira_padrao');
   if (selBand) siteCfg.bandeiraPadrao = selBand.value;
+  const inpCorte = document.getElementById('tp_data_corte_gateway');
+  if (inpCorte && inpCorte.value) siteCfg.dataCorteGateway = inpCorte.value;
 
   const novaTP = {};
 
@@ -2071,12 +2179,19 @@ async function salvarTaxasPagamento() {
     });
   });
 
-  siteCfg.taxasPagamento = novaTP;
+  // Aplica em Cielo OU MP conforme o gateway em edição
+  if (gatewayEdicao === 'mercado_pago') {
+    siteCfg.taxasMercadoPago = novaTP;
+  } else {
+    siteCfg.taxasPagamento = novaTP;
+  }
 
   const payload = {
     pct: siteCfg.pct,
     bandeiraPadrao: siteCfg.bandeiraPadrao,
-    taxasPagamento: novaTP,
+    dataCorteGateway: siteCfg.dataCorteGateway,
+    taxasPagamento: siteCfg.taxasPagamento,
+    taxasMercadoPago: siteCfg.taxasMercadoPago,
   };
 
   // 1. localStorage (cache local)
@@ -2085,7 +2200,8 @@ async function salvarTaxasPagamento() {
   // 2. Servidor (sincroniza)
   const ok = await saveConfigToServer('taxas_pagamento_site', payload);
   if (ok) {
-    showSaveStatus('✓ Taxas de pagamento salvas no servidor');
+    const gwNome = gatewayEdicao === 'mercado_pago' ? 'Mercado Pago' : 'Cielo';
+    showSaveStatus(`✓ Taxas ${gwNome} salvas no servidor`);
   } else {
     showSaveStatus('⚠ Salvo só localmente (servidor offline)', true);
   }
@@ -2300,41 +2416,70 @@ function mapBlingPedido(p) {
 
   // Helper: calcula taxa pro canal Site (Tray + Cielo por bandeira/método)
   // Retorna { total, tray, gateway } pra permitir exibição separada
+  // Decide qual tabela de taxa usar pro pedido do Site:
+  // 1. Se p.gatewayPagamento explícito (detectado pelo servidor) → respeita
+  // 2. Senão, usa data de corte (dataCorteGateway): antes = Cielo, depois = MP
+  function escolherGatewayDoPedido() {
+    // Preferência: gateway explícito do servidor (mais confiável)
+    if (p.gatewayPagamento === 'mercado_pago') return 'mercado_pago';
+    if (p.gatewayPagamento === 'cielo')        return 'cielo';
+
+    // Fallback: data de corte. Compara data do pedido (ISO YYYY-MM-DD).
+    const dataCorte = taxaCfg.dataCorteGateway;
+    if (dataCorte && p.data) {
+      const dataPedido = String(p.data).slice(0, 10);
+      if (dataPedido >= dataCorte) return 'mercado_pago';
+    }
+    return 'cielo';
+  }
+
   function calcularTaxaSite() {
-    const tp = taxaCfg.taxasPagamento || {};
+    const gateway = escolherGatewayDoPedido();
+    // Cielo usa taxasPagamento, MP usa taxasMercadoPago
+    const tp = (gateway === 'mercado_pago')
+      ? (taxaCfg.taxasMercadoPago || {})
+      : (taxaCfg.taxasPagamento || {});
+
     const metodo = p.metodoPagamento;
     const bandeira = p.bandeiraPagamento || taxaCfg.bandeiraPadrao || 'mastercard';
 
-    // Tray sempre aplica sobre qualquer venda do site
+    // Tray sempre aplica sobre qualquer venda do site (independente do gateway)
     const taxaTray = venda * (taxaCfg.pct || 0) / 100;
 
-    // Taxa Cielo/Gateway depende do método
-    let taxaCielo = 0;
+    // Taxa Gateway (Cielo ou MP) depende do método de pagamento
+    let taxaGatewayCalc = 0;
     if (metodo && tp[metodo]) {
       const cfg = tp[metodo];
       // Pix/boleto têm taxa única (não por bandeira)
       if (cfg.pct !== undefined || cfg.fixo !== undefined) {
-        taxaCielo = (venda * (cfg.pct || 0) / 100) + (cfg.fixo || 0);
+        taxaGatewayCalc = (venda * (cfg.pct || 0) / 100) + (cfg.fixo || 0);
       } else {
         // Cartões: escolhe bandeira
         const cfgBandeira = cfg[bandeira] || cfg[taxaCfg.bandeiraPadrao || 'mastercard'];
         if (cfgBandeira) {
-          taxaCielo = (venda * (cfgBandeira.pct || 0) / 100) + (cfgBandeira.fixo || 0);
+          taxaGatewayCalc = (venda * (cfgBandeira.pct || 0) / 100) + (cfgBandeira.fixo || 0);
         }
       }
     }
 
-    return { total: taxaTray + taxaCielo, tray: taxaTray, gateway: taxaCielo };
+    return {
+      total: taxaTray + taxaGatewayCalc,
+      tray: taxaTray,
+      gateway: taxaGatewayCalc,
+      gatewayUsado: gateway, // 'cielo' ou 'mercado_pago'
+    };
   }
 
   let taxaML;
   let taxaTray = 0;         // só preenchido no canal Site
   let taxaGateway = 0;      // só preenchido no canal Site
   let taxaTrayReal = false; // true se o valor da Tray veio da API do Bling
+  let gatewayUsado = null;  // 'cielo' ou 'mercado_pago' (só preenchido no canal Site)
   if (p.lojaId === SITE_ID && taxaCfg.taxasPagamento) {
-    // Canal Site: separamos Tray (plataforma) e Gateway (Cielo ou outro)
+    // Canal Site: separamos Tray (plataforma) e Gateway (Cielo ou MP)
     const breakdown = calcularTaxaSite();
     taxaGateway = breakdown.gateway;  // Gateway sempre é estimado (Bling não sabe dessa taxa)
+    gatewayUsado = breakdown.gatewayUsado;
 
     // Pra Tray, se a API trouxe o valor real usa ele; senão, usa nosso cálculo
     if (apiTrouxeTaxa) {
@@ -2401,6 +2546,8 @@ function mapBlingPedido(p) {
     taxaTray,      // breakdown Site
     taxaGateway,   // breakdown Site
     taxaTrayReal,  // true se taxaTray veio da API do Bling
+    gatewayUsado,  // 'cielo' ou 'mercado_pago' (Site only)
+    gatewayPagamento: p.gatewayPagamento || null, // gateway detectado pelo servidor
     frete,
     freteOrigem,
     freteDetalhes,
@@ -2573,7 +2720,7 @@ function openModal(num) {
       <span class="brow-val neg">– ${formatMoney(m.taxaTray || 0)}</span>
     </div>
     <div class="brow">
-      <span class="brow-label">💳 Taxa Gateway de pagamento${m.metodoPagamento ? ' ('+labelMetodo(m.metodoPagamento, m.bandeiraPagamento, m.numParcelas)+') ✓ real' : ' (método não identificado — est.)'}</span>
+      <span class="brow-label">💳 Taxa ${m.gatewayUsado === 'mercado_pago' ? 'Mercado Pago' : 'Cielo'}${m.metodoPagamento ? ' ('+labelMetodo(m.metodoPagamento, m.bandeiraPagamento, m.numParcelas)+')' : ' (método não identificado — est.)'}${m.gatewayPagamento ? ' ✓ detectado' : ' · por data'}</span>
       <span class="brow-val neg">– ${formatMoney(m.taxaGateway || 0)}</span>
     </div>
     ` : `
